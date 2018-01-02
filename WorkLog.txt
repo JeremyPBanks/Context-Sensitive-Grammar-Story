@@ -1,0 +1,8 @@
+*************************************
+*  Context-Sensitive Grammar Story  *
+*  Python/MySQL                     *
+*  Jeremy Banks                     *
+*************************************
+
+
+1/1/2017: Finished up the main OOP design, as the global Queue is now fully implemented. Also added functionality for article selection between 'a' and 'an', only using the latter when the selected word begins with a vowel. Currently there is a bug that sometimes generates an infinite loop inside getAdjective(); database selection issue? Will investigate further tomorrow.

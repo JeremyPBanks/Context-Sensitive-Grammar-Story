@@ -2,24 +2,51 @@ import random
 import pymysql
 import sys
 import re
+import myQueue
+import myNode
 
 
+
+
+#*************************************
+#*  Functions for main user options  *
+#*************************************
 def viewRecordsFunc():
 	userInput2 = raw_input("Write in a word that you would like to search for: ")
-	userInput2 = userInput2.lower()
-	query = "SELECT frequency FROM ProperNouns WHERE word=%s;"
-	cur.execute(query,(userInput2))
-	typeName = cur.fetchone()[0]
-	conn.commit()
-	print "Number of Times Used Over All Stories Generated: ",typeName
+	userInput21 = userInput2.lower()
+	boolIsInDB = False
+	while boolIsInDB == False:
+		if userInput21 == "back":
+			return
+
+		for x in listTables:
+			try:
+				query0 = "SELECT frequency FROM ",x," WHERE word=%s;"
+				query = ''.join(query0)
+				cur.execute(query,(userInput21))
+				typeName = cur.fetchone()[0]
+				boolIsInDB = True
+				conn.commit()
+				print "Number of times ",userInput21, " was used over all stories generated: ",typeName
+				break
+			except:
+				continue
+		if boolIsInDB == True:
+			userInput2 = raw_input("Write in another word that you would like to search for: ")
+			userInput21 = userInput2.lower()
+			boolIsInDB = False
+		else:
+			userInput2 = raw_input("Word not found. Write in another word that you would like to search for: ")
+			userInput21 = userInput2.lower()
+
 
 def insertionFunc():
 	userInput2 = raw_input("Which category of words would you like to insert into the database? Nouns, Proper Nouns, Pronouns, Articles, Verbs, Adjectives, Adverbs, Conjunctions, Prepositions, Exclamations, or Opening Phrases? ")
 	userInput2 = userInput2.lower()
 	print "\n"
 	while 1:
-		if userInput2 in dict:
-			dict[userInput2]()
+		if userInput2 in dict2:
+			dict2[userInput2]()
 			break
 		else:
 			userInput2 = raw_input("Incorrect Input. Please enter a valid category [Nouns, Proper Nouns, Pronouns, Articles, Verbs, Adverbs, Conjunctions, Prepositions, Exclamations, or Opening Phrases]: ")
@@ -67,89 +94,172 @@ def generateFunc():
 	cur.execute(query,(openingIndex))
 	tense = cur.fetchone()[0]
 	conn.commit()
-	stringStory += openingPhrase.capitalize()
-		
-	maxLen = random.randint(1,6)
-	stringStory = genStart(stringStory,characterName,maxLen,tense,True)
-	stringStory = stringStory.replace("  "," ")
-	print stringStory
-	sys.exit(0)
-	
 
-def genStart(stringStory,characterName,maxLen,tense,firstTimeThrough):
-	howToContinue = 3#random.randint(1,6)
-	art = ""
+	openingObj = myNode.wordNode(openingPhrase.capitalize(),"OpeningPhrases")
+	ParagraphQueue.enqueue(openingObj)		
+	maxLen = random.randint(1,6)
+	genStart(characterName,maxLen)
+	printMyStory()
+	sys.exit(0)
+
+def printMyStory():
+	strFin = ""
+	while ParagraphQueue.isEmpty() == False:
+		strFin += ParagraphQueue.dequeue().word
+		if ParagraphQueue.isEmpty() != True:
+			strFin += " "
+	
+	strFin = strFin.replace("  "," ")
+	strFin = strFin.replace(" .",".")
+	print strFin
+
+
+
+
+
+
+
+#***********************************************
+#*  Recursive functions for contextual states  *
+#***********************************************
+def genStart(characterName,maxLen):
+	howToContinue = 3#random.randint(1,5)
 	
 	if howToContinue == 1:
-		return stringStory + " " + getAdverb() + genS1(characterName,maxLen,tense,False,1,"verb","",['action','change'],[])
+		adverbObj = getAdverb()
+		ParagraphQueue.enqueue(adverbObj)
+		genS1(characterName,maxLen,False,1,"verb","",['action','change'],[])
 	elif howToContinue == 2:
-		if firstTimeThrough:
-			return stringStory + " " + getExclamation() + "! Sorry, " + genStart(stringStory,characterName,maxLen,tense,False,2)
-		elif prevNum == 2:
-			return " " + getExclamation() + "! Apologies, " + genStart(stringStory,characterName,maxLen,tense,False,2)
+		exObj = getExclamation()
+		exObj.word += "! Sorry, that was strange, anyway "
+		ParagraphQueue.enqueue(exObj)
+		genStart(characterName,maxLen)
 	elif howToContinue == 3:
-		art = getArticle()
-		if art == "an":
-			art = "a"
-		return stringStory + " " + art	+ genS1(characterName,maxLen,tense,False,1,"adjective",art,[],[])
+		artObj = getArticle()
+		ParagraphQueue.enqueue(artObj)
+		genS1(characterName,maxLen,False,1,"adjective",artObj.word,[],[])
 	elif howToContinue == 4:
-		return stringStory + " " + getAdjective(0,"") + genS1(characterName,maxLen,tense,False,1,"noun","",[],['place','thing'])
+		adjObj = getAdjective(0,"")
+		ParagraphQueue.enqueue(adjObj)
+		genS1(characterName,maxLen,False,1,"noun","",[],['place','thing'])
 	elif howToContinue == 5:
-		return stringStory + " " + getPreposition() + genS1(characterName,maxLen,tense,False,1,"article","",[],[])
-	elif howToContinue == 6:
-		return stringStory + " " + getNoun("yes",['person','place','thing'],"") + genS1(characterName,maxLen,tense,False,1,"verb","",['action','change','situation'],[])
-	else:
-		return ""
+		prepObj = getPreposition()
+		ParagraphQueue.enqueue(prepObj)
+		genS1(characterName,maxLen,False,1,"article","",[],[])
+	#elif howToContinue == 6:
+	#	nObj = getNoun("yes",['person','place','thing'],"")
+	#	ParagraphQueue.enqueue(nObj)
+	#	genS1(characterName,maxLen,False,1,"verb","",['action','change','situation'],[])
+	return
 			
 
-def genS1(characterName, maxLen, tense, False, firstThrough, catToIf, art, verbL,nounL):
+def genS1(characterName, maxLen, False, firstThrough, catToIf, art, verbL, nounL):
 	if maxLen == 0:
-		return ""
+		return
+
+	queueLen = len(ParagraphQueue.paragraph)
+	lastArticle = findMyLastArticle(queueLen)
+	print "Last Article: ",lastArticle
 
 	if catToIf == "verb":
 		randElement = random.randint(1,4)
+		vObj = getVerb(verbL,ParagraphQueue.paragraph[queueLen-1].tense)
+		#if lastArticle != "an" and lastArticle != "":
+		#	while vObj.word[0] in listVowels:
+		#		vObj = getVerb(verbL,ParagraphQueue.paragraph[queueLen-1].tense)
+		#else:
+		#	while vObj.word[0] not in listVowels:
+		#		vObj = getVerb(verbL,ParagraphQueue.paragraph[queueLen-1].tense)
+		ParagraphQueue.enqueue(vObj)
 		if randElement == 1:
-			return " " + getVerb(verbL,tense) + genS1(characterName,maxLen,tense,False,1,"article",art,[],[])
+			genS1(characterName,maxLen,False,1,"article",lastArticle,[],[])
 		elif randElement == 2:
-			return " " + getVerb(verbL, tense) + genS1(characterName,maxLen,tense,False,1,"preposition","",[],[])
+			genS1(characterName,maxLen,False,1,"preposition","",[],[])
 		elif randElement == 3:
-			return " " + getVerb(verbL, tense) + genS1(characterName,maxLen,tense,False,1,".","",[],[])
+			genS1(characterName,maxLen,False,1,".","",[],[])
 		else:
-			return " " + getVerb(verbL, tense) + genS1(characterName,maxLen,tense,False,1,".",art,[],[])
+			genS1(characterName,maxLen,False,1,".",lastArticle,[],[])
+
 	elif catToIf == "noun":
 		randElement = random.randint(1,4)
+		nObj = getNoun("no",['person','place','thing'],lastArticle)
+		#if lastArticle != "an" and lastArticle != "":
+		#	while nObj.word[0] in listVowels:
+		#		nObj = getNoun("no",['person','place','thing'],art)
+		#else:
+		#	while nObj.word[0] not in listVowels:
+		#		nObj = getNoun("no",['person','place','thing'],art)
 		if randElement == 1:
-			return " " + getNoun("yes",['person','place','thing'],art) + genS1(characterName,maxLen,tense,False,1,"conjunctions",art,[],[])
+			nObj = getNoun("yes",['person','place','thing'],lastArticle)
+			#if lastArticle != "an" and lastArticle != "":
+			#	while nObj.word[0] in listVowels:
+					
+			ParagraphQueue.enqueue(nObj)
+			genS1(characterName,maxLen,False,1,"conjunctions",lastArticle,[],[])
 		elif randElement == 2:
-			return " " + getNoun("no",['person','place','thing'],art) + genS1(characterName,maxLen,tense,False,1,"adverb",art,[],[])
+			ParagraphQueue.enqueue(nObj)
+			genS1(characterName,maxLen,False,1,"adverb",lastArticle,[],[])
 		elif randElement == 3:
-			return " " + getNoun("no",['person','place','thing'],art) + genS1(characterName,maxLen,tense,False,1,".",art,[],[])
+			ParagraphQueue.enqueue(nObj)
+			genS1(characterName,maxLen,False,1,".",lastArticle,[],[])
 		else:
-			return " " + getNoun("no",['person','place','thing'],art) + genS1(characterName,maxLen,tense,False,1,"verb",art,['action','change','situation'],[])
+			ParagraphQueue.enqueue(nObj)
+			genS1(characterName,maxLen,False,1,"verb",lastArticle,['action','change','situation'],[])
+
 	elif catToIf == "adjective":
-		return " " + getAdjective(0, art) + genS1(characterName,maxLen,tense,False,1,"noun","",[],['place','thing',])
+		adjObj = getAdjective(0, art)
+		ParagraphQueue.enqueue(adjObj)
+		genS1(characterName,maxLen,False,1,"noun","",[],['place','thing',])
 		
 	elif catToIf == "preposition":
-		return " " + getPreposition() + genS1(characterName,maxLen,tense,False,1,"article",art,['person','place','thing'],[])
+		prepObj = getPreposition()
+		ParagraphQueue.enqueue(prepObj)
+		genS1(characterName,maxLen,False,1,"article",lastArticle,['person','place','thing'],[])
+
 	elif catToIf == "article":
-		art = getArticle()
-		if art == "an":
-			art = "a"
+		artObj = getArticle()
+		ParagraphQueue.enqueue(artObj)
 		randElement = random.randint(1,2)
 		if randElement == 1:
-			return " " + art + genS1(characterName,maxLen,tense,False,1,"adjective",art,[],[])
+			genS1(characterName,maxLen,False,1,"adjective",lastArticle,[],[])
 		else:
-			return " " + getArticle() + genS1(characterName,maxLen,tense,False,1,"noun",art,[],[])
+			genS1(characterName,maxLen,False,1,"noun",lastArticle,[],[])
+
 	elif catToIf == "conjunctions":
-		return " " + getConjunction() + genS1(characterName,maxLen,tense,False,1,"article",art,[],[])
+		conObj = getConjunction()
+		ParagraphQueue.enqueue(conObj)
+		genS1(characterName,maxLen,False,1,"article",lastArticle,[],[])
+
 	elif catToIf == "adverb":
-		return " " + getAdverb() + genS1(characterName,maxLen,tense,False,1,"verb","",['action','change'],[])
+		adverbObj = getAdverb()
+		ParagraphQueue.enqueue(adverbObj)
+		genS1(characterName,maxLen,False,1,"verb","",['action','change'],[])
+
 	elif catToIf == ".":
 		maxLen -= 1
-		return "."
-	else:
-		return ""
+		periodObj = myNode.wordNode(".",None)
+		ParagraphQueue.enqueue(periodObj)
+		return
 
+	return
+
+
+def findMyLastArticle(queueLen):
+	while queueLen > 0:
+		if ParagraphQueue.paragraph[queueLen-1].category == "Articles":
+			return ParagraphQueue.paragraph[queueLen-1].word
+		queueLen -= 1
+	return None
+
+
+
+
+
+
+
+#*********************************
+#*  Functions for grabbing words *
+#*********************************
 def getAdverb():
 	query = "SELECT COUNT(*) FROM Adverb;"
 	cur.execute(query)
@@ -163,7 +273,8 @@ def getAdverb():
 	query = "UPDATE Adverb SET frequency = frequency + 1 WHERE word=%s;"
 	cur.execute(query,(strAdverb))
 	conn.commit()
-	return strAdverb
+	adverbObj = myNode.wordNode(strAdverb,"Adverb")
+	return adverbObj
 
 def getExclamation():
 	query = "SELECT COUNT(*) FROM Exclamation;"
@@ -178,7 +289,8 @@ def getExclamation():
 	query = "UPDATE Exclamation SET frequency = frequency + 1 WHERE word=%s;"
 	cur.execute(query,(strEx))
 	conn.commit()
-	return strEx.upper()
+	exObj = myNode.wordNode(strEx.upper(),"Exclamation")
+	return exObj
 
 def getArticle():
 	query = "SELECT COUNT(*) FROM Articles;"
@@ -193,12 +305,13 @@ def getArticle():
 	query = "UPDATE Articles SET frequency = frequency + 1 WHERE word=%s;"
 	cur.execute(query,(strArt))
 	conn.commit()
-	return strArt
+	articleObj = myNode.wordNode(strArt,"Articles")
+	return articleObj
 
 def getAdjective(prevNum, art):
-	howToContinue = random.randint(1,4)
+	howToContinue = random.randint(1,3)
 
-	if howToContinue == 1 or howToContinue == 2:
+	if howToContinue == 1:
 		query = "SELECT COUNT(*) FROM Adjective;"
 		cur.execute(query)
 		countRows = cur.fetchone()[0]
@@ -222,14 +335,13 @@ def getAdjective(prevNum, art):
 				cur.execute(query,(strAdj))
 				conn.commit()
 				break
-		if howToContinue == 1:
-			return strAdj
-		else:
-			return strAdj + " " + getAdjective(howToContinue,art)
-	elif howToContinue == 3 and prevNum != 0:
-		return getConjunction() + " " + getAdjective(howToContinue,art)
+		adjObj = myNode.wordNode(strAdj,"Adjective")
+		return adjObj
+	#elif howToContinue == 3 and prevNum != 0:
+	#	return getConjunction() + " " + getAdjective(howToContinue,art)
 	else:
-		return ""
+		adjObj = myNode.wordNode("","Adjective")
+		return adjObj
 
 def getConjunction():
 	query = "SELECT COUNT(*) FROM Conjunction;"
@@ -244,7 +356,8 @@ def getConjunction():
 	query = "UPDATE Conjunction SET frequency = frequency + 1 WHERE word=%s;"
 	cur.execute(query,(strCon))
 	conn.commit()
-	return strCon
+	conObj = myNode.wordNode(strCon,"Conjunction")
+	return conObj
 
 def getPreposition():
 	query = "SELECT COUNT(*) FROM Prepositions;"
@@ -259,45 +372,60 @@ def getPreposition():
 	query = "UPDATE Prepositions SET frequency = frequency + 1 WHERE word=%s;"
 	cur.execute(query,(strprep))
 	conn.commit()
-	return strprep
+	prepObj = myNode.wordNode(strprep,"Prepositions")
+	return prepObj
 
 def getNoun(isPlural,typesToUse,art):
-	normalOrProper = random.randint(1,2)
+	#normalOrProper = random.randint(1,2)
 	strn = ""
 	if art == "a" or art == "an":
 		query = "SELECT COUNT(*) FROM Nouns;"
 		cur.execute(query)
 		countRows = cur.fetchone()[0]
 		conn.commit()
-		while 1:
-			nounIndex = random.randint(1,countRows)
-			query = "SELECT type FROM Nouns WHERE id=%s;"
-			cur.execute(query,(nounIndex))
-			typeName = cur.fetchone()[0]
-			conn.commit()
-			query = "SELECT isPlural FROM Nouns WHERE id=%s;"
-			cur.execute(query,(nounIndex))
-			selectIsPlural = cur.fetchone()[0]
-			conn.commit()
-			if typeName in typesToUse and selectIsPlural == isPlural:
-				query = "SELECT word FROM Nouns WHERE id=%s;"
-				cur.execute(query,(nounIndex))
-				strn = cur.fetchone()[0]
-				conn.commit()
-				if art == "an":
-					if strn[:1] in listVowels:
-						query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
-						cur.execute(query,(strn))
-						conn.commit()
-						break
-				else:
-					query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
-					cur.execute(query,(strn))
-					conn.commit()
-					break
-		return strn
 
-	elif normalOrProper == 1:
+		firstChar = 'a'
+		if art == 'a':
+			while firstChar in listVowels:
+				nounIndex = random.randint(1,countRows)
+				query = "SELECT type FROM Nouns WHERE id=%s;"
+				cur.execute(query,(nounIndex))
+				typeName = cur.fetchone()[0]
+				conn.commit()
+				query = "SELECT isPlural FROM Nouns WHERE id=%s;"
+				cur.execute(query,(nounIndex))
+				selectIsPlural = cur.fetchone()[0]
+				conn.commit()
+				if typeName in typesToUse and selectIsPlural == isPlural:
+					query = "SELECT word FROM Nouns WHERE id=%s;"
+					cur.execute(query,(nounIndex))
+					strn = cur.fetchone()[0]
+					firstChar = strn[0]
+		else:
+			firstChar = 'c'
+			while firstChar not in listVowels:
+				nounIndex = random.randint(1,countRows)
+				query = "SELECT type FROM Nouns WHERE id=%s;"
+				cur.execute(query,(nounIndex))
+				typeName = cur.fetchone()[0]
+				conn.commit()
+				query = "SELECT isPlural FROM Nouns WHERE id=%s;"
+				cur.execute(query,(nounIndex))
+				selectIsPlural = cur.fetchone()[0]
+				conn.commit()
+				if typeName in typesToUse and selectIsPlural == isPlural:
+					query = "SELECT word FROM Nouns WHERE id=%s;"
+					cur.execute(query,(nounIndex))
+					strn = cur.fetchone()[0]
+					firstChar = strn[0]
+				
+		query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
+		cur.execute(query,(strn))
+		conn.commit()	
+		nObj = myNode.wordNode(strn,"Nouns")
+		return nObj
+
+	else:#if normalOrProper == 1:
 		query = "SELECT COUNT(*) FROM Nouns;"
 		cur.execute(query)
 		countRows = cur.fetchone()[0]
@@ -317,38 +445,33 @@ def getNoun(isPlural,typesToUse,art):
 				cur.execute(query,(nounIndex))
 				strn = cur.fetchone()[0]
 				conn.commit()
-				if art == "an":
-					if strn[:1] in listVowels:
-						query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
-						cur.execute(query,(strn))
-						conn.commit()
-						break
-				else:
-					query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
-					cur.execute(query,(strn))
-					conn.commit()
-					break
-		return strn
-	else:
-		query = "SELECT COUNT(*) FROM ProperNouns;"
-		cur.execute(query)
-		countRows = cur.fetchone()[0]
-		conn.commit()
-		while 1:
-			nounIndex = random.randint(1,countRows)
-			query = "SELECT type FROM ProperNouns WHERE id=%s;"
-			cur.execute(query,(nounIndex))
-			typeName = cur.fetchone()[0]
-			if typeName in typesToUse:
-				query = "SELECT word FROM ProperNouns WHERE id=%s;"
-				cur.execute(query,(nounIndex))
-				strn = cur.fetchone()[0]
-				conn.commit()
-				query = "UPDATE ProperNouns SET frequency = frequency + 1 WHERE word=%s;"
+				query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
 				cur.execute(query,(strn))
 				conn.commit()
 				break
-		return strn.title()
+		nObj = myNode.wordNode(strn,"Nouns")
+		return nObj
+	#else:
+	#	query = "SELECT COUNT(*) FROM ProperNouns;"
+	#	cur.execute(query)
+	#	countRows = cur.fetchone()[0]
+	#	conn.commit()
+	#	while 1:
+	#		nounIndex = random.randint(1,countRows)
+	#		query = "SELECT type FROM ProperNouns WHERE id=%s;"
+	#		cur.execute(query,(nounIndex))
+	#		typeName = cur.fetchone()[0]
+	#		if typeName in typesToUse:
+	#			query = "SELECT word FROM ProperNouns WHERE id=%s;"
+	#			cur.execute(query,(nounIndex))
+	#			strn = cur.fetchone()[0]
+	#			conn.commit()
+	#			query = "UPDATE ProperNouns SET frequency = frequency + 1 WHERE word=%s;"
+	#			cur.execute(query,(strn))
+	#			conn.commit()
+	#			break
+	#	nObj = myNode.wordNode(strn.title(),"ProperNouns")
+	#	return nObj
 
 
 def getVerb(verbL, tense):
@@ -357,6 +480,14 @@ def getVerb(verbL, tense):
 	cur.execute(query)
 	countRows = cur.fetchone()[0]
 	conn.commit()
+	if tense is None:
+		tenseLen = len(ParagraphQueue.paragraph)
+		while tenseLen > 1 and tense is None:
+			tenseLen -= 1
+			tense = ParagraphQueue.paragraph[tenseLen-1].tense
+		if tense is None:
+			tense = "past"
+
 	while 1:
 		vIndex = random.randint(1,countRows)
 		query = "SELECT type FROM Verbs WHERE id=%s;"
@@ -377,9 +508,21 @@ def getVerb(verbL, tense):
 			conn.commit()
 			break
 		
-	return strv
+	vObj = myNode.wordNode(strv,"Verbs")
+	return vObj
 
 
+
+
+
+
+
+
+
+
+#*****************************
+#*  Functions for insertions *
+#*****************************
 def insertNouns():
 	userInput3 = raw_input("Enter the noun you wish to be in the database: ")
 	userInput3 = userInput3.lower()
@@ -509,14 +652,30 @@ def insertPrepositions():
 def insertPhrases():
 	userInput3 = raw_input("Enter the opening phrase you wish to be in the database: ")
 	userInput3 = userInput3.lower()
-	cur.execute("INSERT INTO OpeningPhrases (phrase,frequency) SELECT * FROM (SELECT %s,0) AS tmp WHERE NOT EXISTS (SELECT phrase FROM OpeningPhrases WHERE phrase = %s)LIMIT 1;",(userInput3,userInput3))
+	userInput4 = raw_input("Is this phrase in present or past tense? ")
+	userInput4 = userInput4.lower()
+	while 1:
+		if userInput4 in listVerbTense:
+			cur.execute("INSERT INTO OpeningPhrases (phrase,frequency,tense) SELECT * FROM (SELECT %s,0,%s) AS tmp WHERE NOT EXISTS (SELECT phrase FROM OpeningPhrases WHERE phrase = %s)LIMIT 1;",(userInput3,userInput4,userInput3))
+			conn.commit()
+			break
+		else:
+			userInput4 = raw_input("Incorrect Input. The phrase has to be in past or present tense: ")
+			userInput4 = userInput4.lower()		
 	conn.commit()
 	print "\n"
 
 	
 
 
-dict = {'insert':insertionFunc, 'generate':generateFunc, 'view':viewRecordsFunc,'nouns':insertNouns,'proper nouns':insertProperNouns,'pronouns':insertPronouns,'articles':insertArticles,'verbs':insertVerbs,'adverbs':insertAdverbs,'conjunctions':insertConjunctions,'prepositions':insertPrepositions, 'exclamations':insertExclamations,'adjectives':insertAdjectives,'opening phrases':insertPhrases}
+
+
+
+#*********
+#* Main  *
+#*********
+dict = {'insert':insertionFunc, 'generate':generateFunc, 'view':viewRecordsFunc}
+dict2 = {'nouns':insertNouns,'proper nouns':insertProperNouns,'pronouns':insertPronouns,'articles':insertArticles,'verbs':insertVerbs,'adverbs':insertAdverbs,'conjunctions':insertConjunctions,'prepositions':insertPrepositions, 'exclamations':insertExclamations,'adjectives':insertAdjectives,'opening phrases':insertPhrases}
 options = ['insert','view','generate']
 listNoun = ['person','place','thing','idea']
 listPronoun = ['subjective','objective','reflexive','possessive']
@@ -525,6 +684,8 @@ listVerbs = ['action','event','situation','change']
 listVerbTense = ['present','past']
 listVowels = ['a','i','e','o','u']
 listYesorNo = ['yes','no']
+listTables = ['Nouns','Adjective','Adverb','Articles','Conjunction','Exclamation','OpeningPhrases','Prepositions','Pronoun','ProperNouns','Verbs']
+ParagraphQueue = myQueue.wordQueue()
 
 conn = pymysql.connect(host='localhost',port=3306,user='user1',password='password',db='contextFreeGrammar')
 cur = conn.cursor()
@@ -533,6 +694,8 @@ userInput = userInput.lower()
 while 1:
 	if userInput in options:
 		dict[userInput]()
+		userInput = raw_input("Would you like to insert words into the database, view records, or generate a story?[insert/view/generate]: ")
+		userInput = userInput.lower()
 	else:
 		userInput = raw_input("Incorrect Input [insert/view/generate]: ")
 
