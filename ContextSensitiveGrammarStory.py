@@ -108,7 +108,10 @@ def printMyStory():
 		strFin += ParagraphQueue.dequeue().word
 		if ParagraphQueue.isEmpty() != True:
 			strFin += " "
-	
+	if strFin[len(strFin)-1] != '.':
+		strFin += "."
+	strFin = strFin.replace("    "," ")
+	strFin = strFin.replace("   "," ")
 	strFin = strFin.replace("  "," ")
 	strFin = strFin.replace(" .",".")
 	print strFin
@@ -125,7 +128,9 @@ def printMyStory():
 def genStart(characterName,maxLen):
 	if maxLen == 0:
 		return
-	howToContinue = random.randint(1,3)
+
+	howToContinue = random.randint(2,3)
+	queueLen = len(ParagraphQueue.paragraph)
 	
 	if howToContinue == 1:
 		exObj = getExclamation()
@@ -139,7 +144,10 @@ def genStart(characterName,maxLen):
 	elif howToContinue == 3:
 		nObj = getNoun("yes",['person','place','thing','idea'],"",True)
 		ParagraphQueue.enqueue(nObj)
-		genS2(characterName,maxLen)
+		if findMyLastPrep(queueLen,"word") is None:
+			genS2(characterName,maxLen)
+		else:
+			genS5(characterName,maxLen)
 	return
 			
 
@@ -153,18 +161,36 @@ def genS1(characterName, maxLen):
 	#print "Last Article: ",lastArticle
 
 	if catToIf == 1:
-		randElement = random.randint(1,2)
-		if randElement == 1:
-			nObj = getNoun("yes",['person','place','thing'],lastArticle,False)		
-			ParagraphQueue.enqueue(nObj)
-			genS2(characterName,maxLen)
-		elif randElement == 2:
+		if lastArticle == "the":
+			randElement = random.randint(1,2)
+			if randElement == 1:
+				nObj = getNoun("yes",['person','place','thing'],lastArticle,False)		
+				ParagraphQueue.enqueue(nObj)
+				if findMyLastPrep(queueLen,"word") is None:
+					genS2(characterName,maxLen)
+				else:
+					genS5(characterName,maxLen)
+			elif randElement == 2:
+				nObj = getNoun("no",['person','place','thing'],lastArticle,False)
+				ParagraphQueue.enqueue(nObj)
+				if findMyLastPrep(queueLen,"word") is None:
+					genS2(characterName,maxLen)
+				else:
+					genS5(characterName,maxLen)
+		else:
 			nObj = getNoun("no",['person','place','thing'],lastArticle,False)
 			ParagraphQueue.enqueue(nObj)
-			genS2(characterName,maxLen)
+			if findMyLastPrep(queueLen,"word") is None:
+				genS2(characterName,maxLen)
+			else:
+				genS5(characterName,maxLen)
 
 	elif catToIf == 2:
 		adjObj = getAdjective(0, lastArticle)
+		if queueLen > 1:
+			if ParagraphQueue.paragraph[queueLen-1].word is adjObj.word:
+				genS1(characterName,maxLen)
+				return
 		ParagraphQueue.enqueue(adjObj)
 		genS1(characterName,maxLen)
 
@@ -172,7 +198,6 @@ def genS1(characterName, maxLen):
 		maxLen -= 1
 		periodObj = myNode.wordNode(".",None)
 		ParagraphQueue.enqueue(periodObj)
-		return
 
 	return
 
@@ -212,7 +237,6 @@ def genS3(characterName, maxLen):
 		maxLen -= 1
 		periodObj = myNode.wordNode(".",None)
 		ParagraphQueue.enqueue(periodObj)
-		return
 	return
 
 
@@ -232,7 +256,33 @@ def genS4(characterName, maxLen):
 		maxLen -= 1
 		periodObj = myNode.wordNode(".",None)
 		ParagraphQueue.enqueue(periodObj)
+	return
+
+
+def genS5(characterName,maxLen):
+	if maxLen == 0:
 		return
+
+	queueLen = len(ParagraphQueue.paragraph)
+	myPrep = findMyLastPrep(queueLen,"cat")
+
+	if myPrep is not None:
+		if myPrep == "instruments":
+			genRand = 2
+		else:
+			genRand = random.randint(1,2)
+	else:
+		genRand = random.randint(1,2)
+
+	if genRand == 1:
+		maxLen -= 1
+		periodObj = myNode.wordNode(".",None)
+		ParagraphQueue.enqueue(periodObj)
+	elif genRand == 2:
+		prepObj = getPreposition()
+		ParagraphQueue.enqueue(prepObj)
+		genStart(characterName, maxLen)
+	return
 
 
 def findMyLastArticle(queueLen):
@@ -252,6 +302,17 @@ def findMyLastNounPlural(queueLen):
 				return False
 		queueLen -= 1
 	return False
+
+def findMyLastPrep(queueLen,wordOrCategory):
+	while queueLen > 0:
+		if ParagraphQueue.paragraph[queueLen-1].category == "Prepositions":
+			if wordOrCategory == "word":
+				return ParagraphQueue.paragraph[queueLen-1].word
+			else:
+				return ParagraphQueue.paragraph[queueLen-1].type
+		queueLen -= 1
+	return None
+
 
 
 
@@ -317,12 +378,12 @@ def getAdjective(prevNum, art):
 		query = "SELECT COUNT(*) FROM Adjective;"
 		cur.execute(query)
 		countRows = cur.fetchone()[0]
-		print "NumOfRows: ",countRows
+		#print "NumOfRows: ",countRows
 		conn.commit()
 		while 1:
 			adjIndex = random.randint(1,countRows)
 			query = "SELECT word FROM Adjective WHERE id=%s;"
-			print "Index: ",adjIndex
+			#print "Index: ",adjIndex
 			cur.execute(query,(adjIndex))
 			strAdj = cur.fetchone()[0]
 			conn.commit()
@@ -389,6 +450,8 @@ def getPreposition():
 
 def getNoun(isPlural,typesToUse,art,isProper):
 	strn = ""
+	queueLen = len(ParagraphQueue.paragraph)
+	myPrep = findMyLastPrep(queueLen,"cat")
 	if isProper is False:
 		if art == "a" or art == "an":
 			query = "SELECT COUNT(*) FROM Nouns;"
@@ -409,12 +472,42 @@ def getNoun(isPlural,typesToUse,art,isProper):
 					selectIsPlural = cur.fetchone()[0]
 					conn.commit()
 					if typeName in typesToUse and selectIsPlural == isPlural:
-						query = "SELECT word FROM Nouns WHERE id=%s;"
-						cur.execute(query,(nounIndex))
-						strn = cur.fetchone()[0]
-						firstChar = strn[0]
+						if myPrep is not None:
+							if myPrep == "time" and typeName == "idea":
+								query = "SELECT word FROM Nouns WHERE id=%s;"
+								cur.execute(query,(nounIndex))
+								strn = cur.fetchone()[0]
+								firstChar = strn[0]
+							elif myPrep == "place" and typeName == "place":
+								query = "SELECT word FROM Nouns WHERE id=%s;"
+								cur.execute(query,(nounIndex))
+								strn = cur.fetchone()[0]
+								firstChar = strn[0]
+							elif myPrep == "direction" and typeName == "place":
+								query = "SELECT word FROM Nouns WHERE id=%s;"
+								cur.execute(query,(nounIndex))
+								strn = cur.fetchone()[0]
+								firstChar = strn[0]
+							elif myPrep == "agent" and typeName == "person":
+								query = "SELECT word FROM Nouns WHERE id=%s;"
+								cur.execute(query,(nounIndex))
+								strn = cur.fetchone()[0]
+								firstChar = strn[0]
+							elif myPrep == "instruments" and typeName == "thing":
+								query = "SELECT word FROM Nouns WHERE id=%s;"
+								cur.execute(query,(nounIndex))
+								strn = cur.fetchone()[0]
+								firstChar = strn[0]
+							else:
+								continue
+						else:
+							query = "SELECT word FROM Nouns WHERE id=%s;"
+							cur.execute(query,(nounIndex))
+							strn = cur.fetchone()[0]
+							firstChar = strn[0]
+						#break
 			else:
-				firstChar = 'c'
+				firstChar = '8'
 				while firstChar not in listVowels:
 					nounIndex = random.randint(1,countRows)
 					query = "SELECT type FROM Nouns WHERE id=%s;"
@@ -426,10 +519,40 @@ def getNoun(isPlural,typesToUse,art,isProper):
 					selectIsPlural = cur.fetchone()[0]
 					conn.commit()
 					if typeName in typesToUse and selectIsPlural == isPlural:
-						query = "SELECT word FROM Nouns WHERE id=%s;"
-						cur.execute(query,(nounIndex))
-						strn = cur.fetchone()[0]
-						firstChar = strn[0]
+						if myPrep is not None:
+							if myPrep == "time" and typeName == "idea":
+								query = "SELECT word FROM Nouns WHERE id=%s;"
+								cur.execute(query,(nounIndex))
+								strn = cur.fetchone()[0]
+								firstChar = strn[0]
+							elif myPrep == "place" and typeName == "place":
+								query = "SELECT word FROM Nouns WHERE id=%s;"
+								cur.execute(query,(nounIndex))
+								strn = cur.fetchone()[0]
+								firstChar = strn[0]
+							elif myPrep == "direction" and typeName == "place":
+								query = "SELECT word FROM Nouns WHERE id=%s;"
+								cur.execute(query,(nounIndex))
+								strn = cur.fetchone()[0]
+								firstChar = strn[0]
+							elif myPrep == "agent" and typeName == "person":
+								query = "SELECT word FROM Nouns WHERE id=%s;"
+								cur.execute(query,(nounIndex))
+								strn = cur.fetchone()[0]
+								firstChar = strn[0]
+							elif myPrep == "instruments" and typeName == "thing":
+								query = "SELECT word FROM Nouns WHERE id=%s;"
+								cur.execute(query,(nounIndex))
+								strn = cur.fetchone()[0]
+								firstChar = strn[0]
+							else:
+								continue
+						else:
+							query = "SELECT word FROM Nouns WHERE id=%s;"
+							cur.execute(query,(nounIndex))
+							strn = cur.fetchone()[0]
+							firstChar = strn[0]
+						#break
 				
 			query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
 			cur.execute(query,(strn))
@@ -453,14 +576,45 @@ def getNoun(isPlural,typesToUse,art,isProper):
 				selectIsPlural = cur.fetchone()[0]
 				conn.commit()
 				if typeName in typesToUse and selectIsPlural == isPlural:
-					query = "SELECT word FROM Nouns WHERE id=%s;"
-					cur.execute(query,(nounIndex))
-					strn = cur.fetchone()[0]
-					conn.commit()
-					query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
-					cur.execute(query,(strn))
-					conn.commit()
-					break
+					if myPrep is not None:
+						if myPrep == "time" and typeName == "idea":
+							query = "SELECT word FROM Nouns WHERE id=%s;"
+							cur.execute(query,(nounIndex))
+							strn = cur.fetchone()[0]
+							firstChar = strn[0]
+						elif myPrep == "place" and typeName == "place":
+							query = "SELECT word FROM Nouns WHERE id=%s;"
+							cur.execute(query,(nounIndex))
+							strn = cur.fetchone()[0]
+							firstChar = strn[0]
+						elif myPrep == "direction" and typeName == "place":
+							query = "SELECT word FROM Nouns WHERE id=%s;"
+							cur.execute(query,(nounIndex))
+							strn = cur.fetchone()[0]
+							firstChar = strn[0]
+						elif myPrep == "agent" and typeName == "person":
+							query = "SELECT word FROM Nouns WHERE id=%s;"
+							cur.execute(query,(nounIndex))
+							strn = cur.fetchone()[0]
+							firstChar = strn[0]
+						elif myPrep == "instruments" and typeName == "thing":
+							query = "SELECT word FROM Nouns WHERE id=%s;"
+							cur.execute(query,(nounIndex))
+							strn = cur.fetchone()[0]
+							firstChar = strn[0]
+						else:
+							continue
+					else:
+						query = "SELECT word FROM Nouns WHERE id=%s;"
+						cur.execute(query,(nounIndex))
+						strn = cur.fetchone()[0]
+						firstChar = strn[0]
+				else:
+					continue
+				break
+			query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
+			cur.execute(query,(strn))
+			conn.commit()
 			nObj = myNode.wordNode(strn,"Nouns")
 			return nObj
 	else:
@@ -473,17 +627,66 @@ def getNoun(isPlural,typesToUse,art,isProper):
 			query = "SELECT type FROM ProperNouns WHERE id=%s;"
 			cur.execute(query,(nounIndex))
 			typeName = cur.fetchone()[0]
+			#print "Index Prop: ",nounIndex,"\tType Name: ",typeName,"\tUse: ",typesToUse,"\tmyPrep: ",myPrep
 			if typeName in typesToUse:
-				query = "SELECT word FROM ProperNouns WHERE id=%s;"
-				cur.execute(query,(nounIndex))
-				strn = cur.fetchone()[0]
-				conn.commit()
-				query = "UPDATE ProperNouns SET frequency = frequency + 1 WHERE word=%s;"
-				cur.execute(query,(strn))
-				conn.commit()
-				break
+				if myPrep is not None:
+					if myPrep == "time" and typeName == "idea":
+						query = "SELECT word FROM ProperNouns WHERE id=%s;"
+						cur.execute(query,(nounIndex))
+						strn = cur.fetchone()[0]
+						firstChar = strn[0]
+					elif myPrep == "place" and typeName == "place":
+						query = "SELECT word FROM ProperNouns WHERE id=%s;"
+						cur.execute(query,(nounIndex))
+						strn = cur.fetchone()[0]
+						firstChar = strn[0]
+					elif myPrep == "direction" and typeName == "place":
+						query = "SELECT word FROM ProperNouns WHERE id=%s;"
+						cur.execute(query,(nounIndex))
+						strn = cur.fetchone()[0]
+						firstChar = strn[0]
+					elif myPrep == "agent" and typeName == "person":
+						query = "SELECT word FROM ProperNouns WHERE id=%s;"
+						cur.execute(query,(nounIndex))
+						strn = cur.fetchone()[0]
+						firstChar = strn[0]
+					elif myPrep == "instruments" and typeName == "thing":
+						query = "SELECT word FROM ProperNouns WHERE id=%s;"
+						cur.execute(query,(nounIndex))
+						strn = cur.fetchone()[0]
+						firstChar = strn[0]
+					else:
+						continue
+				else:
+					query = "SELECT word FROM ProperNouns WHERE id=%s;"
+					cur.execute(query,(nounIndex))
+					strn = cur.fetchone()[0]
+					conn.commit()
+			else:
+				continue
+			break
+		query = "UPDATE ProperNouns SET frequency = frequency + 1 WHERE word=%s;"
+		cur.execute(query,(strn))
+		conn.commit()
 		nObj = myNode.wordNode(strn.title(),"ProperNouns")
+		if nObj.kind is not None:
+			if nObj.kind == "product":
+				if nObj.word[0] in listVowels:
+					nObj.word = "an " + nObj.word
+				else:
+					nObj.word = "a " + nObj.word
+			elif nObj.kind == "title":
+				randIntro = random.randint(1,2)
+				if randIntro == 1:
+					nObj.word = "a weird version of " + nObj.word
+				else:
+					nObj.word = "a copy of " + nObj.word
+			elif nObj.kind == "group":
+				if nObj.word[len(nObj.word)-1] == 's' and nObj.word.startswith('the ') == False:
+					nObj.word = "the " + nObj.word
 		return nObj
+
+
 
 
 def getVerb(verbL, tense):
@@ -565,12 +768,21 @@ def insertProperNouns():
 	userInput4 = userInput4.lower()
 	while 1:
 		if userInput4 in listNoun:
+			if userInput4 == "thing":
+				while 1:
+					userInput5 = raw_input("Is this thing a product, title, or group? ")
+					userInput5 = userInput5.lower()
+					if userInput5 in listThingKinds:
+						cur.execute("INSERT INTO ProperNouns (word,type,frequency,kind) SELECT * FROM (SELECT %s,%s,0,%s) AS tmp WHERE NOT EXISTS (SELECT word FROM ProperNouns WHERE word = %s)LIMIT 1;",(userInput3,userInput4,userInput5,userInput3))
+						conn.commit()
+						print "\n"
+						return
 			break
 		else:
 			userInput4 = raw_input("Incorrect Input. A noun can only be a person, place, thing, or idea: ")
 			userInput4 = userInput4.lower()
 	print "\n"
-	cur.execute("INSERT INTO ProperNouns (word,type,frequency) SELECT * FROM (SELECT %s,%s,0) AS tmp WHERE NOT EXISTS (SELECT word FROM ProperNouns WHERE word = %s)LIMIT 1;",(userInput3,userInput4,userInput3))
+	cur.execute("INSERT INTO ProperNouns (word,type,frequency,kind) SELECT * FROM (SELECT %s,%s,0,NULL) AS tmp WHERE NOT EXISTS (SELECT word FROM ProperNouns WHERE word = %s)LIMIT 1;",(userInput3,userInput4,userInput3))
 	conn.commit()
 
 def insertPronouns():
@@ -657,8 +869,16 @@ def insertExclamations():
 def insertPrepositions():
 	userInput3 = raw_input("Enter the preposition you wish to be in the database: ")
 	userInput3 = userInput3.lower()
-	cur.execute("INSERT INTO Prepositions (word,frequency) SELECT * FROM (SELECT %s,0) AS tmp WHERE NOT EXISTS (SELECT word FROM Prepositions WHERE word = %s)LIMIT 1;",(userInput3,userInput3))
-	conn.commit()
+	userInput4 = raw_input("Does it refer to time, place, direction, agent, or instruments? ")
+	userInput4 = userInput4.lower()
+	while 1:
+		if userInput4 in listPreps:
+			cur.execute("INSERT INTO Prepositions (word,type,frequency) SELECT * FROM (SELECT %s,%s,0) AS tmp WHERE NOT EXISTS (SELECT word FROM Prepositions WHERE word = %s)LIMIT 1;",(userInput3,userInput4,userInput3))
+			conn.commit()
+			break
+		else:
+			userInput4 = raw_input("Incorrect Input. A preposition must refer to a time, place, direction, agent, or instruments: ")
+			userInput4 = userInput4.lower()
 	print "\n"
 
 def insertPhrases():
@@ -692,7 +912,9 @@ options = ['insert','view','generate']
 listNoun = ['person','place','thing','idea']
 listPronoun = ['subjective','objective','reflexive','possessive']
 listArticles = ['definite','indefinite']
+listPreps = ['time','place','direction','agent','instruments']
 listVerbs = ['action','event','situation','change']
+listThingKinds = ['product','title','group']
 listVerbTense = ['present','past']
 listVowels = ['a','i','e','o','u']
 listYesorNo = ['yes','no']

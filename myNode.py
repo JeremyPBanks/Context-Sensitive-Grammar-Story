@@ -26,7 +26,7 @@ class wordNode:
 		else:
 			self.tense = None
 		
-		if category in ['Articles','Nouns','Pronoun','ProperNouns','Verbs']:
+		if category in ['Articles','Nouns','Pronoun','ProperNouns','Verbs','Prepositions']:
 			query0 = "SELECT type FROM ",category," WHERE word=%s;"
 			query = ''.join(query0)
 			cur2.execute(query,(word1))
@@ -47,6 +47,15 @@ class wordNode:
 			conn2.commit()
 		else:
 			self.isPlural = False
+
+		if category == "ProperNouns":
+			query0 = "SELECT kind FROM ProperNouns WHERE word=%s;"
+			query = ''.join(query0)
+			cur2.execute(query,(word1))
+			self.kind = cur2.fetchone()[0]
+			conn2.commit()
+		else:
+			self.kind = None
 
 		cur2.close()
 		conn2.close()
