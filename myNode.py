@@ -48,7 +48,7 @@ class wordNode:
 		else:
 			self.isPlural = False
 
-		if category == "ProperNouns":
+		if category in ['ProperNouns','Verbs']:
 			query0 = "SELECT kind FROM ProperNouns WHERE word=%s;"
 			query = ''.join(query0)
 			cur2.execute(query,(word1))

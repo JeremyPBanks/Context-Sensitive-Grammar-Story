@@ -164,21 +164,21 @@ def genS1(characterName, maxLen):
 		if lastArticle == "the":
 			randElement = random.randint(1,2)
 			if randElement == 1:
-				nObj = getNoun("yes",['person','place','thing'],lastArticle,False)		
+				nObj = getNoun("yes",['person','place','thing','idea'],lastArticle,False)		
 				ParagraphQueue.enqueue(nObj)
 				if findMyLastPrep(queueLen,"word") is None:
 					genS2(characterName,maxLen)
 				else:
 					genS5(characterName,maxLen)
 			elif randElement == 2:
-				nObj = getNoun("no",['person','place','thing'],lastArticle,False)
+				nObj = getNoun("no",['person','place','thing','idea'],lastArticle,False)
 				ParagraphQueue.enqueue(nObj)
 				if findMyLastPrep(queueLen,"word") is None:
 					genS2(characterName,maxLen)
 				else:
 					genS5(characterName,maxLen)
 		else:
-			nObj = getNoun("no",['person','place','thing'],lastArticle,False)
+			nObj = getNoun("no",['person','place','thing','idea'],lastArticle,False)
 			ParagraphQueue.enqueue(nObj)
 			if findMyLastPrep(queueLen,"word") is None:
 				genS2(characterName,maxLen)
@@ -830,12 +830,22 @@ def insertVerbs():
 	userInput5 = userInput5.lower()
 	while 1:
 		if userInput5 in listVerbTense:
-			cur.execute("INSERT INTO Verbs (word,type,frequency,tense) SELECT * FROM (SELECT %s,%s,0,%s) AS tmp WHERE NOT EXISTS (SELECT word FROM Verbs WHERE word = %s)LIMIT 1;",(userInput3,userInput4,userInput5,userInput3))
-			conn.commit()
 			break
 		else:
 			userInput5 = raw_input("Incorrect Input. A verb itself can be in past or present tense: ")
-			userInput5 = userInput5.lower()	
+			userInput5 = userInput5.lower()
+	userInput6 = raw_input("Does this verb describe a direction, place, time, agent, or instruments? Or None of the above? ")
+	userInput6 = userInput6.lower()
+	while 1:
+		if userInput6 in listPreps or userInput6 == "none":
+			if userInput6 == "none":
+				userInput6 = "NULL"
+			break
+		else:
+			userInput6 = raw_input("Incorrect Input. Does this verb describe a direction, place, time, agent, or instruments? Or None of the above? ")
+			userInput6 = userInput6.lower()
+	cur.execute("INSERT INTO Verbs (word,type,frequency,tense,kind) SELECT * FROM (SELECT %s,%s,0,%s,%s) AS tmp WHERE NOT EXISTS (SELECT word FROM Verbs WHERE word = %s)LIMIT 1;",(userInput3,userInput4,userInput5,userInput6,userInput3))
+	conn.commit()
 	print "\n"
 
 def insertAdjectives():
@@ -912,7 +922,7 @@ options = ['insert','view','generate']
 listNoun = ['person','place','thing','idea']
 listPronoun = ['subjective','objective','reflexive','possessive']
 listArticles = ['definite','indefinite']
-listPreps = ['time','place','direction','agent','instruments']
+listPreps = ['time','place','direction','agent','instruments','none']
 listVerbs = ['action','event','situation','change']
 listThingKinds = ['product','title','group']
 listVerbTense = ['present','past']
