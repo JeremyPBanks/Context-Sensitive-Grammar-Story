@@ -7,7 +7,7 @@ class wordNode:
 	def __init__(self,word1,category):
 		self.word = word1
 		self.category = category
-		
+
 		conn2 = pymysql.connect(host='localhost',port=3306,user='user1',password='password',db='contextFreeGrammar')
 		cur2 = conn2.cursor()
 
@@ -26,7 +26,7 @@ class wordNode:
 		else:
 			self.tense = None
 		
-		if category in ['Articles','Nouns','Pronoun','ProperNouns','Verbs','Prepositions']:
+		if category in ['Articles','Nouns','Pronoun','ProperNouns','Verbs','Prepositions','Adverb']:
 			query0 = "SELECT type FROM ",category," WHERE word=%s;"
 			query = ''.join(query0)
 			cur2.execute(query,(word1))
@@ -49,7 +49,7 @@ class wordNode:
 			self.isPlural = False
 
 		if category in ['ProperNouns','Verbs']:
-			query0 = "SELECT kind FROM ProperNouns WHERE word=%s;"
+			query0 = "SELECT kind FROM ",category," WHERE word=%s;"
 			query = ''.join(query0)
 			cur2.execute(query,(word1))
 			self.kind = cur2.fetchone()[0]

@@ -219,8 +219,18 @@ def genS2(characterName, maxLen):
 def genS3(characterName, maxLen):
 	if maxLen == 0:
 		return
-	genRand = random.randint(1,4)
+	genRand = random.randint(1,2)
 
+	if genRand == 1:
+		prepObj = getPreposition()
+		ParagraphQueue.enqueue(prepObj)
+		genStart(characterName, maxLen)
+	elif genRand == 2:
+		adverbObj = getAdverb()
+		ParagraphQueue.enqueue(adverbObj)
+		genS4(characterName, maxLen)
+	
+	"""
 	if genRand == 1:
 		prepObj = getPreposition()
 		ParagraphQueue.enqueue(prepObj)
@@ -237,6 +247,7 @@ def genS3(characterName, maxLen):
 		maxLen -= 1
 		periodObj = myNode.wordNode(".",None)
 		ParagraphQueue.enqueue(periodObj)
+	"""
 	return
 
 
@@ -692,6 +703,7 @@ def getNoun(isPlural,typesToUse,art,isProper):
 def getVerb(verbL, tense):
 	strv = ""
 	query = "SELECT COUNT(*) FROM Verbs;"
+	#SELECT word FROM Verbs ORDER BY tense DESC LIMIT 0 OFFSET 18;
 	cur.execute(query)
 	countRows = cur.fetchone()[0]
 	conn.commit()
