@@ -8,6 +8,7 @@ import myNode
 
 
 
+
 #*************************************
 #*  Functions for main user options  *
 #*************************************
@@ -122,6 +123,7 @@ def printMyStory():
 
 
 
+
 #***********************************************
 #*  Recursive functions for contextual states  *
 #***********************************************
@@ -142,7 +144,7 @@ def genStart(characterName,maxLen):
 		ParagraphQueue.enqueue(artObj)
 		genS1(characterName,maxLen)
 	elif howToContinue == 3:
-		nObj = getNoun("yes",['person','place','thing','idea'],"",True)
+		nObj = getNoun("yes","",True)
 		ParagraphQueue.enqueue(nObj)
 		if findMyLastPrep(queueLen,"word") is None:
 			genS2(characterName,maxLen)
@@ -164,21 +166,21 @@ def genS1(characterName, maxLen):
 		if lastArticle == "the":
 			randElement = random.randint(1,2)
 			if randElement == 1:
-				nObj = getNoun("yes",['person','place','thing','idea'],lastArticle,False)		
+				nObj = getNoun("yes",lastArticle,False)		
 				ParagraphQueue.enqueue(nObj)
 				if findMyLastPrep(queueLen,"word") is None:
 					genS2(characterName,maxLen)
 				else:
 					genS5(characterName,maxLen)
 			elif randElement == 2:
-				nObj = getNoun("no",['person','place','thing','idea'],lastArticle,False)
+				nObj = getNoun("no",lastArticle,False)
 				ParagraphQueue.enqueue(nObj)
 				if findMyLastPrep(queueLen,"word") is None:
 					genS2(characterName,maxLen)
 				else:
 					genS5(characterName,maxLen)
 		else:
-			nObj = getNoun("no",['person','place','thing','idea'],lastArticle,False)
+			nObj = getNoun("no",lastArticle,False)
 			ParagraphQueue.enqueue(nObj)
 			if findMyLastPrep(queueLen,"word") is None:
 				genS2(characterName,maxLen)
@@ -186,7 +188,7 @@ def genS1(characterName, maxLen):
 				genS5(characterName,maxLen)
 
 	elif catToIf == 2:
-		adjObj = getAdjective(0, lastArticle)
+		adjObj = getAdjective(lastArticle)
 		if queueLen > 1:
 			if ParagraphQueue.paragraph[queueLen-1].word is adjObj.word:
 				genS1(characterName,maxLen)
@@ -207,7 +209,7 @@ def genS2(characterName, maxLen):
 		return
 
 	queueLen = len(ParagraphQueue.paragraph)
-	vObj = getVerb(['action','event','change'], ParagraphQueue.paragraph[0].tense)
+	vObj = getVerb(False, ParagraphQueue.paragraph[0].tense)
 	bShouldIAddAnS = findMyLastNounPlural(queueLen)
 	if bShouldIAddAnS is True and ParagraphQueue.paragraph[0].tense == "present":
 		vObj.word += "s"
@@ -228,42 +230,21 @@ def genS3(characterName, maxLen):
 	elif genRand == 2:
 		adverbObj = getAdverb()
 		ParagraphQueue.enqueue(adverbObj)
-		genS4(characterName, maxLen)
-	
-	"""
-	if genRand == 1:
 		prepObj = getPreposition()
 		ParagraphQueue.enqueue(prepObj)
 		genStart(characterName, maxLen)
-	elif genRand == 2:
-		conObj = getConjunction()
-		ParagraphQueue.enqueue(conObj)
-		genStart(characterName, maxLen)
-	elif genRand == 3:
-		adverbObj = getAdverb()
-		ParagraphQueue.enqueue(adverbObj)
-		genS4(characterName, maxLen)
-	elif genRand == 4:
-		maxLen -= 1
-		periodObj = myNode.wordNode(".",None)
-		ParagraphQueue.enqueue(periodObj)
-	"""
 	return
 
 
 def genS4(characterName, maxLen):
 	if maxLen == 0:
 		return
-	genRand = random.randint(1,3)
+	genRand = random.randint(1,2)
 	if genRand == 1:
-		prepObj = getPreposition()
-		ParagraphQueue.enqueue(prepObj)
-		genStart(characterName, maxLen)
-	elif genRand == 2:
 		conObj = getConjunction()
 		ParagraphQueue.enqueue(conObj)
 		genStart(characterName, maxLen)
-	elif genRand == 3:
+	elif genRand == 2:
 		maxLen -= 1
 		periodObj = myNode.wordNode(".",None)
 		ParagraphQueue.enqueue(periodObj)
@@ -331,6 +312,7 @@ def findMyLastPrep(queueLen,wordOrCategory):
 
 
 
+
 #*********************************
 #*  Functions for grabbing words *
 #*********************************
@@ -382,47 +364,45 @@ def getArticle():
 	articleObj = myNode.wordNode(strArt,"Articles")
 	return articleObj
 
-def getAdjective(prevNum, art):
+def getAdjective(art):
 	howToContinue = random.randint(1,3)
 
 	if howToContinue == 1:
-		query = "SELECT COUNT(*) FROM Adjective;"
-		cur.execute(query)
-		countRows = cur.fetchone()[0]
-		#print "NumOfRows: ",countRows
-		conn.commit()
-		while 1:
-			adjIndex = random.randint(1,countRows)
-			query = "SELECT word FROM Adjective WHERE id=%s;"
-			#print "Index: ",adjIndex
+		if art == "an":
+			query = "SELECT COUNT(word) FROM Adjective WHERE LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u';"
+			cur.execute(query)
+			countRows = cur.fetchone()[0]
+			conn.commit()
+			adjIndex = random.randint(0,countRows-1)
+			query = "SELECT word FROM Adjective WHERE LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u' ORDER BY word DESC LIMIT 1 OFFSET %s;"
 			cur.execute(query,(adjIndex))
 			strAdj = cur.fetchone()[0]
 			conn.commit()
-			if art == "an":
-				if strAdj[0] in listVowels:
-					query = "UPDATE Adjective SET frequency = frequency + 1 WHERE word=%s;"
-					cur.execute(query,(strAdj))
-					conn.commit()
-					break
-				else:
-					continue
-			elif art == "a":
-				if strAdj[0] not in listVowels:
-					query = "UPDATE Adjective SET frequency = frequency + 1 WHERE word=%s;"
-					cur.execute(query,(strAdj))
-					conn.commit()
-					break
-				else:
-					continue
-			else:
-				query = "UPDATE Adjective SET frequency = frequency + 1 WHERE word=%s;"
-				cur.execute(query,(strAdj))
-				conn.commit()
-				break
+		elif art == "a":
+			query = "SELECT COUNT(word) FROM Adjective WHERE LEFT(word,1) != 'a' OR LEFT(word,1) != 'i' OR LEFT(word,1) != 'e' OR LEFT(word,1) != 'o' OR LEFT(word,1) != 'u';"
+			cur.execute(query)
+			countRows = cur.fetchone()[0]
+			conn.commit()
+			adjIndex = random.randint(0,countRows-1)
+			query = "SELECT word FROM Adjective WHERE LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+			cur.execute(query,(adjIndex))
+			strAdj = cur.fetchone()[0]
+			conn.commit()
+		else:
+			query = "SELECT COUNT(word) FROM Adjective"
+			cur.execute(query)
+			countRows = cur.fetchone()[0]
+			conn.commit()
+			adjIndex = random.randint(0,countRows-1)
+			query = "SELECT word FROM Adjective ORDER BY word DESC LIMIT 1 OFFSET %s;"
+			cur.execute(query,(adjIndex))
+			strAdj = cur.fetchone()[0]
+			conn.commit()
+		query = "UPDATE Adjective SET frequency = frequency + 1 WHERE word=%s;"
+		cur.execute(query,(strAdj))
+		conn.commit()
 		adjObj = myNode.wordNode(strAdj,"Adjective")
 		return adjObj
-	#elif howToContinue == 3 and prevNum != 0:
-	#	return getConjunction() + " " + getAdjective(howToContinue,art)
 	else:
 		adjObj = myNode.wordNode("","Adjective")
 		return adjObj
@@ -459,223 +439,176 @@ def getPreposition():
 	prepObj = myNode.wordNode(strprep,"Prepositions")
 	return prepObj
 
-def getNoun(isPlural,typesToUse,art,isProper):
+def getNoun(isPlural,art,isProper):
 	strn = ""
 	queueLen = len(ParagraphQueue.paragraph)
 	myPrep = findMyLastPrep(queueLen,"cat")
 	if isProper is False:
-		if art == "a" or art == "an":
-			query = "SELECT COUNT(*) FROM Nouns;"
-			cur.execute(query)
-			countRows = cur.fetchone()[0]
-			conn.commit()
-
-			firstChar = 'a'
-			if art == 'a':
-				while firstChar in listVowels:
-					nounIndex = random.randint(1,countRows)
-					query = "SELECT type FROM Nouns WHERE id=%s;"
-					cur.execute(query,(nounIndex))
-					typeName = cur.fetchone()[0]
+		if art == "a":
+			if myPrep is not None:
+				if myPrep == "time":
+					query = "SELECT COUNT(word) FROM Nouns WHERE (LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u') AND isPlural = %s AND type = 'idea';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
 					conn.commit()
-					query = "SELECT isPlural FROM Nouns WHERE id=%s;"
-					cur.execute(query,(nounIndex))
-					selectIsPlural = cur.fetchone()[0]
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE (LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u') AND isPlural = %s AND type = 'idea' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+				elif myPrep == "place" or myPrep == "direction":
+					query = "SELECT COUNT(word) FROM Nouns WHERE (LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u') AND isPlural = %s AND type = 'place';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
 					conn.commit()
-					if typeName in typesToUse and selectIsPlural == isPlural:
-						if myPrep is not None:
-							if myPrep == "time" and typeName == "idea":
-								query = "SELECT word FROM Nouns WHERE id=%s;"
-								cur.execute(query,(nounIndex))
-								strn = cur.fetchone()[0]
-								firstChar = strn[0]
-							elif myPrep == "place" and typeName == "place":
-								query = "SELECT word FROM Nouns WHERE id=%s;"
-								cur.execute(query,(nounIndex))
-								strn = cur.fetchone()[0]
-								firstChar = strn[0]
-							elif myPrep == "direction" and typeName == "place":
-								query = "SELECT word FROM Nouns WHERE id=%s;"
-								cur.execute(query,(nounIndex))
-								strn = cur.fetchone()[0]
-								firstChar = strn[0]
-							elif myPrep == "agent" and typeName == "person":
-								query = "SELECT word FROM Nouns WHERE id=%s;"
-								cur.execute(query,(nounIndex))
-								strn = cur.fetchone()[0]
-								firstChar = strn[0]
-							elif myPrep == "instruments" and typeName == "thing":
-								query = "SELECT word FROM Nouns WHERE id=%s;"
-								cur.execute(query,(nounIndex))
-								strn = cur.fetchone()[0]
-								firstChar = strn[0]
-							else:
-								continue
-						else:
-							query = "SELECT word FROM Nouns WHERE id=%s;"
-							cur.execute(query,(nounIndex))
-							strn = cur.fetchone()[0]
-							firstChar = strn[0]
-						#break
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE (LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u') AND isPlural = %s AND type = 'place' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+				elif myPrep == "agent":
+					query = "SELECT COUNT(word) FROM Nouns WHERE (LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u') AND isPlural = %s AND type = 'person';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
+					conn.commit()
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE (LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u') AND isPlural = %s AND type = 'person' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+				elif myPrep == "instruments":
+					query = "SELECT COUNT(word) FROM Nouns WHERE (LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u') AND isPlural = %s AND type = 'thing';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
+					conn.commit()
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE (LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u') AND isPlural = %s AND type = 'thing' ORDER BY word DESC LIMIT 1 OFFSET %s;"
 			else:
-				firstChar = '8'
-				while firstChar not in listVowels:
-					nounIndex = random.randint(1,countRows)
-					query = "SELECT type FROM Nouns WHERE id=%s;"
-					cur.execute(query,(nounIndex))
-					typeName = cur.fetchone()[0]
+				query = "SELECT COUNT(word) FROM Nouns WHERE (LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u') AND isPlural = %s;"
+				cur.execute(query,(isPlural))
+				countRows = cur.fetchone()[0]
+				conn.commit()
+				nounIndex = random.randint(0,countRows-1)
+				query = "SELECT word FROM Nouns WHERE (LEFT(word,1) != 'a' AND LEFT(word,1) != 'i' AND LEFT(word,1) != 'e' AND LEFT(word,1) != 'o' AND LEFT(word,1) != 'u') AND isPlural = %s ORDER BY word DESC LIMIT 1 OFFSET %s;"
+			#print "Query 1: ",query
+			cur.execute(query,(isPlural,nounIndex))
+			strn = cur.fetchone()[0]
+		elif art == "an":
+			if myPrep is not None:
+				if myPrep == "time":
+					query = "SELECT COUNT(word) FROM Nouns WHERE (LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u') AND isPlural = %s AND type = 'idea';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
 					conn.commit()
-					query = "SELECT isPlural FROM Nouns WHERE id=%s;"
-					cur.execute(query,(nounIndex))
-					selectIsPlural = cur.fetchone()[0]
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE (LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u') AND isPlural = %s AND type = 'idea' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+				elif myPrep == "place" or myPrep == "direction":
+					query = "SELECT COUNT(word) FROM Nouns WHERE (LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u') AND isPlural = %s AND type = 'place';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
 					conn.commit()
-					if typeName in typesToUse and selectIsPlural == isPlural:
-						if myPrep is not None:
-							if myPrep == "time" and typeName == "idea":
-								query = "SELECT word FROM Nouns WHERE id=%s;"
-								cur.execute(query,(nounIndex))
-								strn = cur.fetchone()[0]
-								firstChar = strn[0]
-							elif myPrep == "place" and typeName == "place":
-								query = "SELECT word FROM Nouns WHERE id=%s;"
-								cur.execute(query,(nounIndex))
-								strn = cur.fetchone()[0]
-								firstChar = strn[0]
-							elif myPrep == "direction" and typeName == "place":
-								query = "SELECT word FROM Nouns WHERE id=%s;"
-								cur.execute(query,(nounIndex))
-								strn = cur.fetchone()[0]
-								firstChar = strn[0]
-							elif myPrep == "agent" and typeName == "person":
-								query = "SELECT word FROM Nouns WHERE id=%s;"
-								cur.execute(query,(nounIndex))
-								strn = cur.fetchone()[0]
-								firstChar = strn[0]
-							elif myPrep == "instruments" and typeName == "thing":
-								query = "SELECT word FROM Nouns WHERE id=%s;"
-								cur.execute(query,(nounIndex))
-								strn = cur.fetchone()[0]
-								firstChar = strn[0]
-							else:
-								continue
-						else:
-							query = "SELECT word FROM Nouns WHERE id=%s;"
-							cur.execute(query,(nounIndex))
-							strn = cur.fetchone()[0]
-							firstChar = strn[0]
-						#break
-				
-			query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
-			cur.execute(query,(strn))
-			conn.commit()	
-			nObj = myNode.wordNode(strn,"Nouns")
-			return nObj
-
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE (LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u') AND isPlural = %s AND type = 'place' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+				elif myPrep == "agent":
+					query = "SELECT COUNT(word) FROM Nouns WHERE (LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u') AND isPlural = %s AND type = 'person';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
+					conn.commit()
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE (LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u') AND isPlural = %s AND type = 'person' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+				elif myPrep == "instruments":
+					query = "SELECT COUNT(word) FROM Nouns WHERE (LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u') AND isPlural = %s AND type = 'thing';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
+					conn.commit()
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE (LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u') AND isPlural = %s AND type = 'thing' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+			else:
+				query = "SELECT COUNT(word) FROM Nouns WHERE (LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u') AND isPlural = %s;"
+				cur.execute(query,(isPlural))
+				countRows = cur.fetchone()[0]
+				conn.commit()
+				nounIndex = random.randint(0,countRows-1)
+				query = "SELECT word FROM Nouns WHERE (LEFT(word,1) = 'a' OR LEFT(word,1) = 'i' OR LEFT(word,1) = 'e' OR LEFT(word,1) = 'o' OR LEFT(word,1) = 'u') AND isPlural = %s ORDER BY word DESC LIMIT 1 OFFSET %s;"
+			#print "Query 2: ",query
+			cur.execute(query,(isPlural,nounIndex))
+			strn = cur.fetchone()[0]
 		else:
-			query = "SELECT COUNT(*) FROM Nouns;"
+			if myPrep is not None:
+				if myPrep == "time":
+					query = "SELECT COUNT(word) FROM Nouns WHERE isPlural = %s AND type = 'idea';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
+					conn.commit()
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE isPlural = %s AND type = 'idea' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+				elif myPrep == "place" or myPrep == "direction":
+					query = "SELECT COUNT(word) FROM Nouns WHERE isPlural = %s AND type = 'place';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
+					conn.commit()
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE isPlural = %s AND type = 'place' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+				elif myPrep == "agent":
+					query = "SELECT COUNT(word) FROM Nouns WHERE isPlural = %s AND type = 'person';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
+					conn.commit()
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE isPlural = %s AND type = 'person' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+				elif myPrep == "instruments":
+					query = "SELECT COUNT(word) FROM Nouns WHERE isPlural = %s AND type = 'thing';"
+					cur.execute(query,(isPlural))
+					countRows = cur.fetchone()[0]
+					conn.commit()
+					nounIndex = random.randint(0,countRows-1)
+					query = "SELECT word FROM Nouns WHERE isPlural = %s AND type = 'thing' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+			else:
+				query = "SELECT COUNT(word) FROM Nouns WHERE isPlural = %s;"
+				cur.execute(query,(isPlural))
+				countRows = cur.fetchone()[0]
+				conn.commit()
+				nounIndex = random.randint(0,countRows-1)
+				query = "SELECT word FROM Nouns WHERE isPlural = %s ORDER BY word DESC LIMIT 1 OFFSET %s;"
+			#print "Query 3: ",query
+			cur.execute(query,(isPlural,nounIndex))
+			strn = cur.fetchone()[0]
+		query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
+		cur.execute(query,(strn))
+		conn.commit()
+		nObj = myNode.wordNode(strn,"Nouns")
+		return nObj
+	else:
+		if myPrep is not None:
+			if myPrep == "time":
+				query = "SELECT COUNT(word) FROM ProperNouns WHERE type = 'idea';"
+				cur.execute(query)
+				countRows = cur.fetchone()[0]
+				conn.commit()
+				nounIndex = random.randint(0,countRows-1)
+				query = "SELECT word FROM ProperNouns WHERE type = 'idea' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+			elif myPrep == "place" or myPrep == "direction":
+				query = "SELECT COUNT(word) FROM ProperNouns WHERE type = 'place';"
+				cur.execute(query)
+				countRows = cur.fetchone()[0]
+				conn.commit()
+				nounIndex = random.randint(0,countRows-1)
+				query = "SELECT word FROM ProperNouns WHERE type = 'place' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+			elif myPrep == "agent":
+				query = "SELECT COUNT(word) FROM ProperNouns WHERE type = 'person';"
+				cur.execute(query)
+				countRows = cur.fetchone()[0]
+				conn.commit()
+				nounIndex = random.randint(0,countRows-1)
+				query = "SELECT word FROM ProperNouns WHERE type = 'person' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+			elif myPrep == "instruments":
+				query = "SELECT COUNT(word) FROM ProperNouns WHERE type = 'thing';"
+				cur.execute(query)
+				countRows = cur.fetchone()[0]
+				conn.commit()
+				nounIndex = random.randint(0,countRows-1)
+				query = "SELECT word FROM ProperNouns WHERE type = 'thing' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+		else:
+			query = "SELECT COUNT(word) FROM ProperNouns;"
 			cur.execute(query)
 			countRows = cur.fetchone()[0]
 			conn.commit()
-			while 1:
-				nounIndex = random.randint(1,countRows)
-				query = "SELECT type FROM Nouns WHERE id=%s;"
-				cur.execute(query,(nounIndex))
-				typeName = cur.fetchone()[0]
-				conn.commit()
-				query = "SELECT isPlural FROM Nouns WHERE id=%s;"
-				cur.execute(query,(nounIndex))
-				selectIsPlural = cur.fetchone()[0]
-				conn.commit()
-				if typeName in typesToUse and selectIsPlural == isPlural:
-					if myPrep is not None:
-						if myPrep == "time" and typeName == "idea":
-							query = "SELECT word FROM Nouns WHERE id=%s;"
-							cur.execute(query,(nounIndex))
-							strn = cur.fetchone()[0]
-							firstChar = strn[0]
-						elif myPrep == "place" and typeName == "place":
-							query = "SELECT word FROM Nouns WHERE id=%s;"
-							cur.execute(query,(nounIndex))
-							strn = cur.fetchone()[0]
-							firstChar = strn[0]
-						elif myPrep == "direction" and typeName == "place":
-							query = "SELECT word FROM Nouns WHERE id=%s;"
-							cur.execute(query,(nounIndex))
-							strn = cur.fetchone()[0]
-							firstChar = strn[0]
-						elif myPrep == "agent" and typeName == "person":
-							query = "SELECT word FROM Nouns WHERE id=%s;"
-							cur.execute(query,(nounIndex))
-							strn = cur.fetchone()[0]
-							firstChar = strn[0]
-						elif myPrep == "instruments" and typeName == "thing":
-							query = "SELECT word FROM Nouns WHERE id=%s;"
-							cur.execute(query,(nounIndex))
-							strn = cur.fetchone()[0]
-							firstChar = strn[0]
-						else:
-							continue
-					else:
-						query = "SELECT word FROM Nouns WHERE id=%s;"
-						cur.execute(query,(nounIndex))
-						strn = cur.fetchone()[0]
-						firstChar = strn[0]
-				else:
-					continue
-				break
-			query = "UPDATE Nouns SET frequency = frequency + 1 WHERE word=%s;"
-			cur.execute(query,(strn))
-			conn.commit()
-			nObj = myNode.wordNode(strn,"Nouns")
-			return nObj
-	else:
-		query = "SELECT COUNT(*) FROM ProperNouns;"
-		cur.execute(query)
-		countRows = cur.fetchone()[0]
-		conn.commit()
-		while 1:
-			nounIndex = random.randint(1,countRows)
-			query = "SELECT type FROM ProperNouns WHERE id=%s;"
-			cur.execute(query,(nounIndex))
-			typeName = cur.fetchone()[0]
-			#print "Index Prop: ",nounIndex,"\tType Name: ",typeName,"\tUse: ",typesToUse,"\tmyPrep: ",myPrep
-			if typeName in typesToUse:
-				if myPrep is not None:
-					if myPrep == "time" and typeName == "idea":
-						query = "SELECT word FROM ProperNouns WHERE id=%s;"
-						cur.execute(query,(nounIndex))
-						strn = cur.fetchone()[0]
-						firstChar = strn[0]
-					elif myPrep == "place" and typeName == "place":
-						query = "SELECT word FROM ProperNouns WHERE id=%s;"
-						cur.execute(query,(nounIndex))
-						strn = cur.fetchone()[0]
-						firstChar = strn[0]
-					elif myPrep == "direction" and typeName == "place":
-						query = "SELECT word FROM ProperNouns WHERE id=%s;"
-						cur.execute(query,(nounIndex))
-						strn = cur.fetchone()[0]
-						firstChar = strn[0]
-					elif myPrep == "agent" and typeName == "person":
-						query = "SELECT word FROM ProperNouns WHERE id=%s;"
-						cur.execute(query,(nounIndex))
-						strn = cur.fetchone()[0]
-						firstChar = strn[0]
-					elif myPrep == "instruments" and typeName == "thing":
-						query = "SELECT word FROM ProperNouns WHERE id=%s;"
-						cur.execute(query,(nounIndex))
-						strn = cur.fetchone()[0]
-						firstChar = strn[0]
-					else:
-						continue
-				else:
-					query = "SELECT word FROM ProperNouns WHERE id=%s;"
-					cur.execute(query,(nounIndex))
-					strn = cur.fetchone()[0]
-					conn.commit()
-			else:
-				continue
-			break
+			nounIndex = random.randint(0,countRows-1)
+			query = "SELECT word FROM ProperNouns ORDER BY word DESC LIMIT 1 OFFSET %s;"
+		#print "Query 4: ",query
+		cur.execute(query,(nounIndex))
+		strn = cur.fetchone()[0]
 		query = "UPDATE ProperNouns SET frequency = frequency + 1 WHERE word=%s;"
 		cur.execute(query,(strn))
 		conn.commit()
@@ -700,44 +633,39 @@ def getNoun(isPlural,typesToUse,art,isProper):
 
 
 
-def getVerb(verbL, tense):
-	strv = ""
-	query = "SELECT COUNT(*) FROM Verbs;"
-	#SELECT word FROM Verbs ORDER BY tense DESC LIMIT 0 OFFSET 18;
-	cur.execute(query)
-	countRows = cur.fetchone()[0]
-	conn.commit()
+def getVerb(isSituation, tense):
 	if tense is None:
 		tenseLen = len(ParagraphQueue.paragraph)
 		while tenseLen > 1 and tense is None:
 			tenseLen -= 1
 			tense = ParagraphQueue.paragraph[tenseLen-1].tense
 		if tense is None:
-			tense = "past"
+			tense = "past" 
+	countRows = 0
+	vIndex = 0
+	if not isSituation:
+		query = "SELECT COUNT(tense) FROM Verbs WHERE tense=%s AND type != 'situation';"
+		cur.execute(query,(tense))
+		countRows = cur.fetchone()[0]
+		conn.commit()
+		vIndex = random.randint(0,countRows-1)
+		query = "SELECT word FROM Verbs WHERE tense=%s AND type != 'situation' ORDER BY tense DESC LIMIT 1 OFFSET %s;"
+	else:
+		query = "SELECT COUNT(tense) FROM Verbs WHERE tense=%s AND type = 'situation';"
+		cur.execute(query,(tense))
+		countRows = cur.fetchone()[0]
+		conn.commit()
+		vIndex = random.randint(0,countRows-1)
+		query = "SELECT word FROM Verbs WHERE tense=%s AND type = 'situation' ORDER BY tense DESC LIMIT 1 OFFSET %s;"
 
-	while 1:
-		vIndex = random.randint(1,countRows)
-		query = "SELECT type FROM Verbs WHERE id=%s;"
-		cur.execute(query,(vIndex))
-		typeName = cur.fetchone()[0]
-		conn.commit()
-		query = "SELECT tense FROM Verbs WHERE id=%s;"
-		cur.execute(query,(vIndex))
-		selectTense = cur.fetchone()[0]
-		conn.commit()
-		if typeName in verbL and tense == selectTense:
-			query = "SELECT word FROM Verbs WHERE id=%s;"
-			cur.execute(query,(vIndex))
-			strv = cur.fetchone()[0]
-			conn.commit()
-			query = "UPDATE Verbs SET frequency = frequency + 1 WHERE word=%s;"
-			cur.execute(query,(strv))
-			conn.commit()
-			break
-		
+	cur.execute(query,(tense,vIndex))
+	strv = cur.fetchone()[0]
+	conn.commit()
+	query = "UPDATE Verbs SET frequency = frequency + 1 WHERE word=%s;"
+	cur.execute(query,(strv))
+	conn.commit()
 	vObj = myNode.wordNode(strv,"Verbs")
 	return vObj
-
 
 
 
@@ -870,8 +798,16 @@ def insertAdjectives():
 def insertAdverbs():
 	userInput3 = raw_input("Enter the adverb you wish to be in the database: ")
 	userInput3 = userInput3.lower()
-	cur.execute("INSERT INTO Adverb (word,frequency) SELECT * FROM (SELECT %s,0) AS tmp WHERE NOT EXISTS (SELECT word FROM Adverb WHERE word = %s)LIMIT 1;",(userInput3,userInput3))
-	conn.commit()
+	userInput4 = raw_input("Is this adverb of type manner, degree, time, frequency, or place? ")
+	userInput4 = userInput4.lower()
+	while 1:
+		if userInput4 in listAdverbs:
+			cur.execute("INSERT INTO Adverb (word,type,frequency) SELECT * FROM (SELECT %s,%s,0) AS tmp WHERE NOT EXISTS (SELECT word FROM Prepositions WHERE word = %s)LIMIT 1;",(userInput3,userInput4,userInput3))
+			conn.commit()
+			break
+		else:
+			userInput4 = raw_input("Incorrect Input. An adverb must be of type manner, degree, time, frequency, or place: ")
+			userInput4 = userInput4.lower()
 	print "\n"
 
 def insertConjunctions():
@@ -936,6 +872,7 @@ listPronoun = ['subjective','objective','reflexive','possessive']
 listArticles = ['definite','indefinite']
 listPreps = ['time','place','direction','agent','instruments','none']
 listVerbs = ['action','event','situation','change']
+listAdverbs = ['manner','time','place','degree','frequency']
 listThingKinds = ['product','title','group']
 listVerbTense = ['present','past']
 listVowels = ['a','i','e','o','u']

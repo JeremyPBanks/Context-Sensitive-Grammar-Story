@@ -1,8 +1,6 @@
 import pymysql
 
 class wordNode:
-	#tenseList = ['Verbs','OpeningPhrases']
-	#typeList = ['Articles','Nouns','Pronoun','ProperNouns','Verbs']
 
 	def __init__(self,word1,category):
 		self.word = word1
