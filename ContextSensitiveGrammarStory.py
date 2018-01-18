@@ -146,10 +146,7 @@ def genStart(characterName,maxLen):
 	elif howToContinue == 3:
 		nObj = getNoun("yes","",True)
 		ParagraphQueue.enqueue(nObj)
-		if findMyLastPrep(queueLen,"word") is None:
-			genS2(characterName,maxLen)
-		else:
-			genS5(characterName,maxLen)
+		genS2(characterName,maxLen)
 	return
 			
 
@@ -167,44 +164,47 @@ def genS1(characterName, maxLen):
 			randElement = random.randint(1,2)
 			if randElement == 1:
 				nObj = getNoun("yes",lastArticle,False)		
-				ParagraphQueue.enqueue(nObj)
-				if findMyLastPrep(queueLen,"word") is None:
-					genS2(characterName,maxLen)
-				else:
-					genS5(characterName,maxLen)
 			elif randElement == 2:
 				nObj = getNoun("no",lastArticle,False)
-				ParagraphQueue.enqueue(nObj)
-				if findMyLastPrep(queueLen,"word") is None:
-					genS2(characterName,maxLen)
-				else:
-					genS5(characterName,maxLen)
 		else:
 			nObj = getNoun("no",lastArticle,False)
-			ParagraphQueue.enqueue(nObj)
-			if findMyLastPrep(queueLen,"word") is None:
-				genS2(characterName,maxLen)
-			else:
-				genS5(characterName,maxLen)
+		ParagraphQueue.enqueue(nObj)
+		genS2(characterName,maxLen)
 
 	elif catToIf == 2:
 		adjObj = getAdjective(lastArticle)
 		if queueLen > 1:
-			if ParagraphQueue.paragraph[queueLen-1].word is adjObj.word:
+			if ParagraphQueue.paragraph[queueLen-1].word == adjObj.word:
 				genS1(characterName,maxLen)
 				return
 		ParagraphQueue.enqueue(adjObj)
 		genS1(characterName,maxLen)
-
-	elif catToIf == ".":
-		maxLen -= 1
-		periodObj = myNode.wordNode(".",None)
-		ParagraphQueue.enqueue(periodObj)
-
 	return
 
 
 def genS2(characterName, maxLen):
+	if maxLen == 0:
+		return
+
+	queueLen = len(ParagraphQueue.paragraph)
+	randElement = random.randint(1,5)
+	if randElement == 1:
+		advObj = getAdverb("frequency")
+		ParagraphQueue.enqueue(advObj)
+	elif randElement == 2:
+		advObj = getAdverb("time")
+		ParagraphQueue.enqueue(advObj)
+	elif randElement == 3:
+		advObj = getAdverb("manner")
+		ParagraphQueue.enqueue(advObj)
+	elif randElement == 4:
+		advObj = getAdverb("degree")
+		ParagraphQueue.enqueue(advObj)
+	genS3(characterName, maxLen)
+	return
+	
+
+def genS3(characterName, maxLen):
 	if maxLen == 0:
 		return
 
@@ -214,66 +214,73 @@ def genS2(characterName, maxLen):
 	if bShouldIAddAnS is True and ParagraphQueue.paragraph[0].tense == "present":
 		vObj.word += "s"
 	ParagraphQueue.enqueue(vObj)
-	genS3(characterName, maxLen)
-	return
-	
 
-def genS3(characterName, maxLen):
-	if maxLen == 0:
+	if vObj.kind is None:
+		randNoun = random.randint(1,3)
+		if randNoun == 1:
+			nObj = getNoun("yes","",True)
+			ParagraphQueue.enqueue(nObj)
+		elif randNoun == 2:
+			artObj = getArticle()
+			ParagraphQueue.enqueue(artObj)
+			boolPlural = ""
+			if artObj.word == "the":
+				randPlural = random.randint(1,2)
+				if randPlural == 1:
+					boolPlural = "yes"
+				else:
+					boolPlural = "no"
+			nObj = getNoun(boolPlural,artObj.word,False)
+			ParagraphQueue.enqueue(nObj)
 		return
-	genRand = random.randint(1,2)
+
+	genRand = random.randint(1,4)
 
 	if genRand == 1:
-		prepObj = getPreposition()
-		ParagraphQueue.enqueue(prepObj)
-		genStart(characterName, maxLen)
-	elif genRand == 2:
-		adverbObj = getAdverb()
-		ParagraphQueue.enqueue(adverbObj)
-		prepObj = getPreposition()
-		ParagraphQueue.enqueue(prepObj)
-		genStart(characterName, maxLen)
+		conObj = getConjunction(True)
+		ParagraphQueue.enqueue(conObj)
+		genS3(characterName, maxLen)
+	else:
+		randElement = 1
+		if ParagraphQueue.paragraph[len(ParagraphQueue.paragraph)-1].type != "situation":
+			randElement = random.randint(1,2)
+
+		if randElement == 2:
+			advObj = getAdverb("manner")
+			ParagraphQueue.enqueue(advObj)
+		elif randElement == 3:
+			advObj = getAdverb("place")
+			ParagraphQueue.enqueue(advObj)
+		genS4(characterName,maxLen)
 	return
 
 
 def genS4(characterName, maxLen):
-	if maxLen == 0:
-		return
-	genRand = random.randint(1,2)
-	if genRand == 1:
-		conObj = getConjunction()
-		ParagraphQueue.enqueue(conObj)
-		genStart(characterName, maxLen)
-	elif genRand == 2:
-		maxLen -= 1
-		periodObj = myNode.wordNode(".",None)
-		ParagraphQueue.enqueue(periodObj)
+	prepObj = getPreposition()
+	ParagraphQueue.enqueue(prepObj)
+	genS5(characterName, maxLen)
 	return
 
 
 def genS5(characterName,maxLen):
-	if maxLen == 0:
-		return
-
 	queueLen = len(ParagraphQueue.paragraph)
 	myPrep = findMyLastPrep(queueLen,"cat")
+	myArt = findMyLastArticle(queueLen)
+	if myArt is None:
+		myArt = ""
 
-	if myPrep is not None:
-		if myPrep == "instruments":
-			genRand = 2
-		else:
-			genRand = random.randint(1,2)
-	else:
-		genRand = random.randint(1,2)
-
+	genRand = random.randint(1,3)
 	if genRand == 1:
-		maxLen -= 1
-		periodObj = myNode.wordNode(".",None)
-		ParagraphQueue.enqueue(periodObj)
+		proObj = getPronoun("possessive")
+		ParagraphQueue.enqueue(proObj)
 	elif genRand == 2:
-		prepObj = getPreposition()
-		ParagraphQueue.enqueue(prepObj)
-		genStart(characterName, maxLen)
+		nObj = getNoun("no",myArt,True)
+		ParagraphQueue.enqueue(nObj)
+	elif genRand == 3:
+		artObj = getArticle()
+		ParagraphQueue.enqueue(artObj)
+		nObj = getNoun("no",artObj.word,False)
+		ParagraphQueue.enqueue(nObj)
 	return
 
 
@@ -281,6 +288,14 @@ def findMyLastArticle(queueLen):
 	while queueLen > 0:
 		if ParagraphQueue.paragraph[queueLen-1].category == "Articles":
 			return ParagraphQueue.paragraph[queueLen-1].word
+		queueLen -= 1
+	return None
+
+
+def findMyLastVerbKind(queueLen):
+	while queueLen > 0:
+		if ParagraphQueue.paragraph[queueLen-1].category == "Verbs":
+			return ParagraphQueue.paragraph[queueLen-1].kind
 		queueLen -= 1
 	return None
 
@@ -316,14 +331,14 @@ def findMyLastPrep(queueLen,wordOrCategory):
 #*********************************
 #*  Functions for grabbing words *
 #*********************************
-def getAdverb():
-	query = "SELECT COUNT(*) FROM Adverb;"
-	cur.execute(query)
+def getAdverb(adverbType):
+	query = "SELECT COUNT(word) FROM Adverb WHERE type=%s;"
+	cur.execute(query,(adverbType))
 	countRows = cur.fetchone()[0]
 	conn.commit()
-	adverbIndex = random.randint(1,countRows)
-	query = "SELECT word FROM Adverb WHERE id=%s;"
-	cur.execute(query,(adverbIndex))
+	adverbIndex = random.randint(0,countRows-1)
+	query = "SELECT word FROM Adverb WHERE type=%s ORDER BY word DESC LIMIT 1 OFFSET %s;"
+	cur.execute(query,(adverbType,adverbIndex))
 	strAdverb = cur.fetchone()[0]
 	conn.commit()
 	query = "UPDATE Adverb SET frequency = frequency + 1 WHERE word=%s;"
@@ -407,14 +422,22 @@ def getAdjective(art):
 		adjObj = myNode.wordNode("","Adjective")
 		return adjObj
 
-def getConjunction():
-	query = "SELECT COUNT(*) FROM Conjunction;"
+def getConjunction(andOr):
+	if not andOr:
+		query = "SELECT COUNT(word) FROM Conjunction WHERE word != 'and' AND word != 'or';"
+		cur.execute(query)
+		countRows = cur.fetchone()[0]
+		conn.commit()
+		conIndex = random.randint(0,countRows-1)
+		query = "SELECT word FROM Conjunction WHERE word != 'and' AND word != 'or' ORDER BY DESC LIMIT 1 OFFSET %s;"
+		cur.execute(query,(conIndex))
+	else:
+		randConj = random.randint(1,2)
+		if randConj == 1:
+			query = "SELECT word FROM Conjunction WHERE word = 'and';"
+		else:
+			query = "SELECT word FROM Conjunction WHERE word = 'or';"
 	cur.execute(query)
-	countRows = cur.fetchone()[0]
-	conn.commit()
-	conIndex = random.randint(1,countRows)
-	query = "SELECT word FROM Conjunction WHERE id=%s;"
-	cur.execute(query,(conIndex))
 	strCon = cur.fetchone()[0]
 	conn.commit()
 	query = "UPDATE Conjunction SET frequency = frequency + 1 WHERE word=%s;"
@@ -666,6 +689,23 @@ def getVerb(isSituation, tense):
 	conn.commit()
 	vObj = myNode.wordNode(strv,"Verbs")
 	return vObj
+
+
+def getPronoun(prohibited):
+	query = "SELECT COUNT(word) FROM Pronoun WHERE type != %s;"
+	cur.execute(query,(prohibited))
+	countRows = cur.fetchone()[0]
+	conn.commit()
+	proIndex = random.randint(0,countRows-1)
+	query = "SELECT word FROM Pronoun WHERE type != 'possessive' ORDER BY word DESC LIMIT 1 OFFSET %s;"
+	cur.execute(query,(proIndex))
+	strPro = cur.fetchone()[0]
+	conn.commit()
+	query = "UPDATE Pronoun SET frequency = frequency + 1 WHERE word=%s;"
+	cur.execute(query,(strPro))
+	conn.commit()
+	proObj = myNode.wordNode(strPro,"Pronoun")
+	return proObj
 
 
 
