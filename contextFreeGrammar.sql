@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jan 15, 2018 at 06:08 PM
+-- Generation Time: Jan 18, 2018 at 06:07 PM
 -- Server version: 5.7.20-0ubuntu0.17.04.1
 -- PHP Version: 7.0.22-0ubuntu0.17.04.1
 
@@ -44,14 +44,14 @@ INSERT INTO `Adjective` (`id`, `word`, `frequency`) VALUES
 (5, 'red', 23),
 (6, 'evil', 44),
 (7, 'ferocious', 22),
-(8, 'blue', 21),
+(8, 'blue', 22),
 (9, 'slow', 20),
 (10, 'fast', 15),
-(11, 'old', 14),
+(11, 'old', 16),
 (12, 'energetic', 21),
-(13, 'unusual', 19),
+(13, 'unusual', 20),
 (14, 'apathetic', 17),
-(15, 'emotionless', 10),
+(15, 'emotionless', 11),
 (16, 'informative', 20);
 
 -- --------------------------------------------------------
@@ -72,21 +72,21 @@ CREATE TABLE `Adverb` (
 --
 
 INSERT INTO `Adverb` (`id`, `word`, `frequency`, `type`) VALUES
-(1, 'nearly', 23, 'degree'),
-(2, 'happily', 26, 'manner'),
-(3, 'endlessly', 31, 'frequency'),
-(4, 'quickly', 15, 'manner'),
-(5, 'cheerfully', 33, 'manner'),
-(6, 'truthfully', 32, 'manner'),
+(1, 'nearly', 25, 'degree'),
+(2, 'happily', 28, 'manner'),
+(3, 'endlessly', 32, 'frequency'),
+(4, 'quickly', 17, 'manner'),
+(5, 'cheerfully', 35, 'manner'),
+(6, 'truthfully', 35, 'manner'),
 (7, 'there', 26, 'place'),
-(8, 'never', 0, 'time'),
-(9, 'recently', 0, 'time'),
-(10, 'everywhere', 0, 'place'),
-(11, 'above', 0, 'place'),
-(12, 'loudly', 0, 'manner'),
-(13, 'almost', 0, 'degree'),
-(14, 'hardly', 0, 'degree'),
-(15, 'normally', 0, 'frequency'),
+(8, 'never', 4, 'time'),
+(9, 'recently', 2, 'time'),
+(10, 'everywhere', 2, 'place'),
+(11, 'above', 2, 'place'),
+(12, 'loudly', 2, 'manner'),
+(13, 'almost', 2, 'degree'),
+(14, 'hardly', 3, 'degree'),
+(15, 'normally', 1, 'frequency'),
 (16, 'sometimes', 0, 'frequency');
 
 -- --------------------------------------------------------
@@ -107,9 +107,9 @@ CREATE TABLE `Articles` (
 --
 
 INSERT INTO `Articles` (`id`, `word`, `type`, `frequency`) VALUES
-(1, 'the', 'definite', 209),
-(2, 'a', 'indefinite', 237),
-(3, 'an', 'indefinite', 212);
+(1, 'the', 'definite', 214),
+(2, 'a', 'indefinite', 246),
+(3, 'an', 'indefinite', 220);
 
 -- --------------------------------------------------------
 
@@ -128,9 +128,9 @@ CREATE TABLE `Conjunction` (
 --
 
 INSERT INTO `Conjunction` (`id`, `word`, `frequency`) VALUES
-(1, 'and', 59),
+(1, 'and', 62),
 (2, 'but', 73),
-(3, 'or', 52),
+(3, 'or', 54),
 (4, 'yet', 0);
 
 -- --------------------------------------------------------
@@ -178,18 +178,18 @@ CREATE TABLE `Nouns` (
 
 INSERT INTO `Nouns` (`id`, `word`, `type`, `frequency`, `isPlural`) VALUES
 (1, 'girl', 'person', 12, 'no'),
-(2, 'school', 'place', 26, 'no'),
-(3, 'dude', 'person', 24, 'no'),
+(2, 'school', 'place', 27, 'no'),
+(3, 'dude', 'person', 25, 'no'),
 (4, 'vest', 'thing', 30, 'no'),
 (5, 'octopus', 'thing', 32, 'no'),
-(6, 'pencil', 'thing', 25, 'no'),
-(7, 'hour', 'idea', 0, 'no'),
+(6, 'pencil', 'thing', 26, 'no'),
+(7, 'hour', 'idea', 2, 'no'),
 (8, 'century', 'idea', 1, 'no'),
-(9, 'mile', 'idea', 0, 'no'),
+(9, 'mile', 'idea', 1, 'no'),
 (10, 'light-year', 'idea', 0, 'no'),
 (11, 'home', 'place', 26, 'no'),
-(12, 'classroom', 'place', 29, 'no'),
-(13, 'bedroom', 'place', 23, 'no'),
+(12, 'classroom', 'place', 30, 'no'),
+(13, 'bedroom', 'place', 25, 'no'),
 (14, 'teeth', 'thing', 13, 'yes'),
 (15, 'boxes', 'thing', 21, 'yes'),
 (16, 'stores', 'place', 10, 'yes'),
@@ -197,14 +197,14 @@ INSERT INTO `Nouns` (`id`, `word`, `type`, `frequency`, `isPlural`) VALUES
 (18, 'theories', 'idea', 0, 'yes'),
 (19, 'apocalypse', 'thing', 49, 'no'),
 (20, 'golf', 'idea', 0, 'no'),
-(21, 'apple', 'thing', 16, 'no'),
+(21, 'apple', 'thing', 17, 'no'),
 (22, 'apples', 'thing', 18, 'yes'),
 (23, 'programmer', 'person', 6, 'no'),
 (24, 'oligarchy', 'thing', 3, 'no'),
-(25, 'hegemon', 'person', 3, 'no'),
+(25, 'hegemon', 'person', 4, 'no'),
 (26, 'atlas', 'thing', 11, 'no'),
-(27, 'citizen', 'person', 5, 'no'),
-(28, 'champion', 'person', 3, 'no'),
+(27, 'citizen', 'person', 6, 'no'),
+(28, 'champion', 'person', 5, 'no'),
 (29, 'igloo', 'thing', 13, 'no'),
 (30, 'igloos', 'thing', 19, 'yes'),
 (31, 'accountants', 'person', 14, 'yes'),
@@ -212,23 +212,23 @@ INSERT INTO `Nouns` (`id`, `word`, `type`, `frequency`, `isPlural`) VALUES
 (33, 'adolescent', 'person', 16, 'no'),
 (34, 'airplane', 'thing', 11, 'no'),
 (35, 'amateurs', 'person', 15, 'yes'),
-(36, 'airstrip', 'place', 30, 'no'),
+(36, 'airstrip', 'place', 31, 'no'),
 (37, 'airstrips', 'place', 17, 'yes'),
 (38, 'ammo', 'thing', 14, 'yes'),
 (39, 'uniforms', 'thing', 10, 'yes'),
-(40, 'uncle', 'person', 24, 'no'),
+(40, 'uncle', 'person', 25, 'no'),
 (41, 'uncles', 'person', 12, 'yes'),
 (42, 'eggs', 'thing', 10, 'yes'),
-(43, 'epidemic', 'thing', 12, 'no'),
+(43, 'epidemic', 'thing', 13, 'no'),
 (44, 'emerald', 'thing', 21, 'no'),
 (45, 'emeralds', 'thing', 22, 'yes'),
-(46, 'engine', 'thing', 22, 'no'),
+(46, 'engine', 'thing', 24, 'no'),
 (47, 'field', 'place', 11, 'no'),
 (48, 'man', 'person', 2, 'no'),
-(49, 'bus stop', 'place', 4, 'no'),
+(49, 'bus stop', 'place', 5, 'no'),
 (50, 'country', 'place', 9, 'no'),
 (51, 'states', 'place', 2, 'yes'),
-(52, 'office', 'place', 0, 'no'),
+(52, 'office', 'place', 1, 'no'),
 (53, 'rubber duck', 'thing', 0, 'no'),
 (54, 'rubber ducks', 'thing', 0, 'yes'),
 (55, 'eon', 'idea', 0, 'no'),
@@ -252,13 +252,13 @@ CREATE TABLE `OpeningPhrases` (
 --
 
 INSERT INTO `OpeningPhrases` (`id`, `phrase`, `frequency`, `tense`) VALUES
-(1, 'a long time ago in a galaxy far, far away...', 75, 'past'),
-(2, 'back in my day,', 90, 'past'),
-(3, 'in the beginning...', 79, 'past'),
-(4, 'good morning,', 78, 'present'),
-(5, 'it was a dark and stormy night...', 95, 'past'),
-(6, 'it all started last friday...', 42, 'past'),
-(7, 'as we speak,', 42, 'present');
+(1, 'a long time ago in a galaxy far, far away...', 80, 'past'),
+(2, 'back in my day,', 96, 'past'),
+(3, 'in the beginning...', 82, 'past'),
+(4, 'good morning,', 81, 'present'),
+(5, 'it was a dark and stormy night...', 97, 'past'),
+(6, 'it all started last friday...', 46, 'past'),
+(7, 'as we speak,', 44, 'present');
 
 -- --------------------------------------------------------
 
@@ -278,17 +278,17 @@ CREATE TABLE `Prepositions` (
 --
 
 INSERT INTO `Prepositions` (`id`, `word`, `frequency`, `type`) VALUES
-(1, 'after', 33, 'time'),
-(2, 'with', 31, 'agent'),
-(3, 'in', 32, 'place'),
-(4, 'on', 35, 'place'),
-(5, 'by', 9, 'instruments'),
-(6, 'into', 15, 'direction'),
-(7, 'with the help of', 10, 'instruments'),
-(8, 'under', 12, 'place'),
-(9, 'at', 13, 'place'),
-(10, 'towards', 16, 'direction'),
-(11, 'to', 10, 'direction');
+(1, 'after', 36, 'time'),
+(2, 'with', 32, 'agent'),
+(3, 'in', 37, 'place'),
+(4, 'on', 37, 'place'),
+(5, 'by', 11, 'instruments'),
+(6, 'into', 17, 'direction'),
+(7, 'with the help of', 13, 'instruments'),
+(8, 'under', 14, 'place'),
+(9, 'at', 15, 'place'),
+(10, 'towards', 17, 'direction'),
+(11, 'to', 12, 'direction');
 
 -- --------------------------------------------------------
 
@@ -308,9 +308,9 @@ CREATE TABLE `Pronoun` (
 --
 
 INSERT INTO `Pronoun` (`id`, `word`, `type`, `frequency`) VALUES
-(1, 'you', 'subjective', 0),
+(1, 'you', 'subjective', 6),
 (2, 'mine', 'possessive', 0),
-(3, 'myself', 'reflexive', 0),
+(3, 'myself', 'reflexive', 4),
 (4, 'me', 'objective', 0);
 
 -- --------------------------------------------------------
@@ -332,30 +332,30 @@ CREATE TABLE `ProperNouns` (
 --
 
 INSERT INTO `ProperNouns` (`id`, `word`, `type`, `frequency`, `kind`) VALUES
-(1, 'jeremy banks', 'person', 101, NULL),
-(2, 'chuck e cheeses', 'place', 42, NULL),
-(3, 'rutgers', 'place', 41, NULL),
-(4, 'space dementia', 'idea', 19, NULL),
-(5, 'the legend of zelda: breath of the wild', 'thing', 17, 'title'),
-(6, 'persona 5', 'thing', 18, 'title'),
-(7, 'gordan freeman', 'person', 117, NULL),
-(8, 'nikloa tesla', 'person', 111, NULL),
+(1, 'jeremy banks', 'person', 106, NULL),
+(2, 'chuck e cheeses', 'place', 44, NULL),
+(3, 'rutgers', 'place', 42, NULL),
+(4, 'space dementia', 'idea', 20, NULL),
+(5, 'the legend of zelda: breath of the wild', 'thing', 18, 'title'),
+(6, 'persona 5', 'thing', 19, 'title'),
+(7, 'gordan freeman', 'person', 120, NULL),
+(8, 'nikloa tesla', 'person', 115, NULL),
 (9, 'buffalo', 'place', 33, NULL),
 (10, 'new jersey', 'place', 26, NULL),
-(11, 'darth vader', 'person', 103, NULL),
-(12, 'ozzy osbourne', 'person', 82, NULL),
-(13, 'nolan bushnell', 'person', 66, NULL),
-(14, 'route 66', 'place', 10, NULL),
-(15, 'virtual boy', 'thing', 3, 'product'),
+(11, 'darth vader', 'person', 107, NULL),
+(12, 'ozzy osbourne', 'person', 86, NULL),
+(13, 'nolan bushnell', 'person', 68, NULL),
+(14, 'route 66', 'place', 12, NULL),
+(15, 'virtual boy', 'thing', 5, 'product'),
 (16, 'Phillies', 'thing', 4, 'group'),
 (17, 'nirvana', 'thing', 5, 'group'),
-(18, 'muse', 'thing', 5, 'group'),
-(19, 'interstellar', 'thing', 5, 'title'),
-(20, 'lg tv', 'thing', 3, 'product'),
+(18, 'muse', 'thing', 6, 'group'),
+(19, 'interstellar', 'thing', 6, 'title'),
+(20, 'lg tv', 'thing', 4, 'product'),
 (21, 'gtx 1080 ti', 'thing', 2, 'product'),
 (22, 'harry potter and the half-blood prince', 'thing', 3, 'title'),
-(23, 'bill nye', 'person', 19, NULL),
-(24, 'neil degrasse tyson', 'person', 15, NULL),
+(23, 'bill nye', 'person', 24, NULL),
+(24, 'neil degrasse tyson', 'person', 18, NULL),
 (25, 'metal gear solid', 'thing', 2, 'title');
 
 -- --------------------------------------------------------
@@ -379,35 +379,35 @@ CREATE TABLE `Verbs` (
 
 INSERT INTO `Verbs` (`id`, `word`, `type`, `frequency`, `tense`, `kind`) VALUES
 (1, 'jump', 'action', 25, 'present', 'direction'),
-(2, 'snow', 'event', 13, 'present', 'place'),
+(2, 'snow', 'event', 14, 'present', 'place'),
 (3, 'seem', 'situation', 4, 'present', NULL),
 (4, 'evolve', 'change', 16, 'present', 'instruments'),
-(5, 'swim', 'action', 22, 'present', 'direction'),
-(6, 'swam', 'action', 30, 'past', 'direction'),
-(7, 'ran', 'action', 39, 'past', 'direction'),
-(8, 'evolved', 'change', 26, 'past', 'instruments'),
+(5, 'swim', 'action', 23, 'present', 'direction'),
+(6, 'swam', 'action', 32, 'past', 'direction'),
+(7, 'ran', 'action', 42, 'past', 'direction'),
+(8, 'evolved', 'change', 30, 'past', 'instruments'),
 (9, 'participated', 'action', 25, 'past', 'time'),
 (10, 'has', 'situation', 3, 'present', NULL),
 (11, 'had', 'situation', 4, 'past', NULL),
 (12, 'happened', 'event', 11, 'past', 'time'),
-(13, 'rained', 'event', 16, 'past', 'place'),
-(14, 'hailed', 'event', 19, 'past', 'place'),
+(13, 'rained', 'event', 19, 'past', 'place'),
+(14, 'hailed', 'event', 21, 'past', 'place'),
 (15, 'stopped', 'action', 35, 'past', 'time'),
-(16, 'explored', 'action', 35, 'past', 'place'),
+(16, 'explored', 'action', 36, 'past', 'place'),
 (17, 'was', 'situation', 4, 'past', NULL),
-(18, 'shrink', 'change', 13, 'present', 'instruments'),
+(18, 'shrink', 'change', 14, 'present', 'instruments'),
 (19, 'grow', 'change', 11, 'present', 'instruments'),
-(20, 'grew', 'change', 27, 'past', 'instruments'),
+(20, 'grew', 'change', 30, 'past', 'instruments'),
 (21, 'is', 'situation', 1, 'present', NULL),
 (22, 'be', 'situation', 1, 'present', NULL),
 (23, 'yawned', 'action', 34, 'past', 'agent'),
-(24, 'protected', 'action', 36, 'past', NULL),
-(25, 'watched', 'action', 2, 'past', NULL),
-(26, 'procrastinated', 'action', 1, 'past', 'time'),
-(27, 'noticed', 'action', 2, 'past', NULL),
+(24, 'protected', 'action', 38, 'past', NULL),
+(25, 'watched', 'action', 3, 'past', NULL),
+(26, 'procrastinated', 'action', 3, 'past', 'time'),
+(27, 'noticed', 'action', 3, 'past', NULL),
 (28, 'see', 'action', 2, 'present', 'NULL'),
-(29, 'mutated', 'change', 0, 'past', 'instruments'),
-(30, 'kick', 'action', 1, 'present', 'direction');
+(29, 'mutated', 'change', 1, 'past', 'instruments'),
+(30, 'kick', 'action', 3, 'present', 'direction');
 
 --
 -- Indexes for dumped tables
